@@ -189,6 +189,6 @@ own.
 - It confers no certification. Conformance is self-declared, and a claim that
   names its own gaps is more useful than one that does not.
 
-## Licence
+## License
 
-Not yet selected. See the repository owner.
+This project is licensed under the [MIT License](LICENSE).
