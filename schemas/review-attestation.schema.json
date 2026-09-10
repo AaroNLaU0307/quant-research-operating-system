@@ -1,0 +1,438 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "review-attestation.schema.json",
+  "title": "QROS review attestation",
+  "description": "Validates the record produced by templates/attestation.md. Its central purpose is to make the verdict invariant machine-enforced: a VALID review carries exactly one of the three verdicts of QROS-REVIEW-VERDICTS; an INVALID review carries NO verdict key at all and consumes no round. Also enforces QROS-REVIEW-BLOCKING-REQUIREMENTS, QROS-REVIEW-SELF-REPORTED-NOT-BLOCKING, QROS-BLIND-IS-TRANSPORT and QROS-INDEP-STATE-PER-DIMENSION.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "review_id",
+    "project_id",
+    "round",
+    "reviewer_id",
+    "reviewer_role",
+    "returned_at",
+    "review_validity",
+    "manifest_id",
+    "manifest_verified",
+    "independence",
+    "blindness_required",
+    "round_consumed"
+  ],
+  "properties": {
+    "review_id": {
+      "$ref": "common.schema.json#/$defs/Identifier"
+    },
+    "project_id": {
+      "$ref": "common.schema.json#/$defs/Identifier"
+    },
+    "issue_lineage": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "round": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "brief_id": {
+      "$ref": "common.schema.json#/$defs/Identifier"
+    },
+    "brief_digest": {
+      "$ref": "common.schema.json#/$defs/Digest"
+    },
+    "reviewer_id": {
+      "$ref": "common.schema.json#/$defs/RoleBinding"
+    },
+    "reviewer_role": {
+      "type": "string",
+      "enum": [
+        "INDEPENDENT_REVIEWER",
+        "ARCHITECTURE_REVIEWER"
+      ]
+    },
+    "returned_at": {
+      "$ref": "common.schema.json#/$defs/Timestamp"
+    },
+    "review_validity": {
+      "$ref": "common.schema.json#/$defs/ReviewValidity"
+    },
+    "manifest_id": {
+      "$ref": "common.schema.json#/$defs/Identifier"
+    },
+    "manifest_verified": {
+      "type": "string",
+      "enum": [
+        "MATCH",
+        "MISMATCH"
+      ]
+    },
+    "mismatched_entries": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "surface_sufficient": {
+      "type": "boolean"
+    },
+    "not_the_producer": {
+      "type": "boolean"
+    },
+    "not_a_subagent_of_producer": {
+      "type": "boolean"
+    },
+    "not_a_prior_reviewer_in_lineage": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "independence": {
+      "description": "QROS-INDEP-STATE-PER-DIMENSION: per dimension AND per target. A global claim of independence is not expressible here, by design.",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "common.schema.json#/$defs/IndependenceStatement"
+      }
+    },
+    "independence_shortfalls": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "blindness_required": {
+      "$ref": "common.schema.json#/$defs/BlindnessLevel"
+    },
+    "blindness_achieved": {
+      "$ref": "common.schema.json#/$defs/BlindnessLevel"
+    },
+    "isolation_mechanism": {
+      "$ref": "common.schema.json#/$defs/IsolationMechanism"
+    },
+    "boundary": {
+      "$ref": "common.schema.json#/$defs/BoundaryRecord"
+    },
+    "exposure_before_freeze": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "commands_run": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "modules_executed_not_inspected": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "frozen_result_path": {
+      "type": "string",
+      "minLength": 1
+    },
+    "frozen_result_digest": {
+      "$ref": "common.schema.json#/$defs/Digest"
+    },
+    "frozen_at": {
+      "$ref": "common.schema.json#/$defs/Timestamp"
+    },
+    "freeze_marker_written": {
+      "type": "boolean"
+    },
+    "frozen_result_unmodified_after_comparands": {
+      "type": "boolean"
+    },
+    "comparands_received_at": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "discrepancies": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "blocking",
+          "evidence_class"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "common.schema.json#/$defs/Identifier"
+          },
+          "blocking": {
+            "type": "boolean"
+          },
+          "threat_class": {
+            "$ref": "common.schema.json#/$defs/ThreatClass"
+          },
+          "evidence_class": {
+            "$ref": "common.schema.json#/$defs/EvidenceClass"
+          },
+          "evidence": {
+            "type": "string"
+          },
+          "failure_path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "smallest_scope": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minimal_fix": {
+            "type": "string"
+          },
+          "minimal_test": {
+            "type": "string"
+          }
+        },
+        "allOf": [
+          {
+            "$comment": "QROS-REVIEW-BLOCKING-REQUIREMENTS: a blocking finding states exactly one threat class, a concrete failure path, an evidence class, and the smallest affected scope. A finding missing any of them is non-blocking by construction.",
+            "if": {
+              "properties": {
+                "blocking": {
+                  "const": true
+                }
+              },
+              "required": [
+                "blocking"
+              ]
+            },
+            "then": {
+              "required": [
+                "threat_class",
+                "failure_path",
+                "smallest_scope",
+                "evidence"
+              ]
+            }
+          },
+          {
+            "$comment": "QROS-REVIEW-SELF-REPORTED-NOT-BLOCKING: restating the producer's account adds no independent information, so it cannot block on its own.",
+            "if": {
+              "properties": {
+                "evidence_class": {
+                  "const": "SELF_REPORTED"
+                }
+              },
+              "required": [
+                "evidence_class"
+              ]
+            },
+            "then": {
+              "properties": {
+                "blocking": {
+                  "const": false
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "out_of_scope_observations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "verdict": {
+      "$ref": "common.schema.json#/$defs/ReviewVerdict"
+    },
+    "blocking_finding_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "invalidity_class": {
+      "type": "string",
+      "enum": [
+        "TRANSPORT_OR_PACKAGING_FAILURE",
+        "REVIEWER_ELIGIBILITY_OR_PROCEDURAL_FAILURE"
+      ]
+    },
+    "invalidity_reason": {
+      "type": "string",
+      "minLength": 1
+    },
+    "supporting_evidence": {
+      "type": "string"
+    },
+    "established_about_work": {
+      "type": "string",
+      "enum": [
+        "NOTHING"
+      ]
+    },
+    "round_consumed": {
+      "type": "string",
+      "enum": [
+        "YES",
+        "NO"
+      ]
+    },
+    "dispatch_ref": {
+      "$ref": "common.schema.json#/$defs/Identifier"
+    },
+    "decision_log_entry": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "backlog_rows_opened": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "allOf": [
+    {
+      "$comment": "VALID branch. A valid substantive review returned exactly one of the three verdicts and completed the freeze record. It must not carry the invalidity fields.",
+      "if": {
+        "properties": {
+          "review_validity": {
+            "const": "VALID"
+          }
+        },
+        "required": [
+          "review_validity"
+        ]
+      },
+      "then": {
+        "required": [
+          "verdict",
+          "frozen_result_digest",
+          "frozen_at",
+          "blindness_achieved"
+        ],
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "invalidity_class"
+              ]
+            },
+            {
+              "required": [
+                "invalidity_reason"
+              ]
+            },
+            {
+              "required": [
+                "established_about_work"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "INVALID branch. A review that never became valid returned NO verdict: the key is prohibited outright, so no sentinel value can stand in for it. It establishes nothing about the work and consumes no round (QROS-BLOCKER-TRANSPORT-NOT-IMPLEMENTATION).",
+      "if": {
+        "properties": {
+          "review_validity": {
+            "const": "INVALID"
+          }
+        },
+        "required": [
+          "review_validity"
+        ]
+      },
+      "then": {
+        "required": [
+          "invalidity_class",
+          "invalidity_reason",
+          "established_about_work",
+          "round_consumed"
+        ],
+        "properties": {
+          "established_about_work": {
+            "const": "NOTHING"
+          },
+          "round_consumed": {
+            "const": "NO"
+          }
+        },
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "verdict"
+              ]
+            },
+            {
+              "required": [
+                "blocking_finding_ids"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "A HOLD names its blocking findings; a PASS has none.",
+      "if": {
+        "properties": {
+          "verdict": {
+            "const": "HOLD"
+          }
+        },
+        "required": [
+          "verdict"
+        ]
+      },
+      "then": {
+        "required": [
+          "blocking_finding_ids"
+        ],
+        "properties": {
+          "blocking_finding_ids": {
+            "minItems": 1
+          }
+        }
+      }
+    },
+    {
+      "$comment": "QROS-BLIND-IS-TRANSPORT: where blindness was required, how the boundary was established and what it excluded must be recorded. A mechanism other than the default requires its boundary to have been verified.",
+      "if": {
+        "properties": {
+          "blindness_required": {
+            "enum": [
+              "CLAIM_BLIND",
+              "OUTCOME_BLIND"
+            ]
+          }
+        },
+        "required": [
+          "blindness_required"
+        ]
+      },
+      "then": {
+        "required": [
+          "isolation_mechanism",
+          "boundary"
+        ]
+      }
+    }
+  ]
+}

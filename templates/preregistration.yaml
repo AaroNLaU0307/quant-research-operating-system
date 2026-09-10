@@ -1,0 +1,226 @@
+# ---------------------------------------------------------------------------
+# PREREGISTRATION — QROS public template
+#
+# Operationalizes: QROS-PREREG-CONTENT · QROS-PREREG-SEAL-BEFORE-EXPOSURE ·
+# QROS-PREREG-KILL-REACHABILITY · QROS-PREREG-METRIC-SCALE-CONSISTENCY ·
+# QROS-PREREG-RULE-DOMAIN-ANALYSIS · QROS-PREREG-RECHECK-AFTER-AMENDMENT ·
+# QROS-PREREG-LINEAGE · QROS-PRESEAL-CONTRIBUTION-RECORDED · QROS-AXES-THREE ·
+# QROS-AXIS-LANE · QROS-AXIS-TRIAL-ACCOUNTING · QROS-AXIS-OUTCOME-EXPOSURE ·
+# QROS-REUSE-DECLARE-BEFORE-USE.
+#
+# ../SPEC.md is the sole normative source. This file records a contract; it
+# does not define a rule. Validated by ../schemas/preregistration.schema.json.
+#
+# The values below are DELIBERATELY SYNTHETIC and describe no real study.
+# Replace every one of them. Comments cite the rule a field serves.
+# ---------------------------------------------------------------------------
+
+schema_version: "1.0.0"
+
+# --- identity -------------------------------------------------------------
+prereg_id: PREREG_SYNTHETIC_001
+prereg_version: 1                      # increments on amendment; see `amendments`
+project_id: PROJECT_SYNTHETIC_001
+work_item: WORKITEM_SYNTHETIC_001
+authored_by: ROLE_BINDING_MAIN_AGENT   # a role binding, never a vendor name
+authored_at: "2000-01-01T00:00:00Z"
+
+# --- lane (QROS-AXIS-LANE) -------------------------------------------------
+# EXPLORATORY | MEASUREMENT | FULL. Governs which claims this work may emit,
+# and nothing else. Never inferred from the other two axes (QROS-AXES-NO-INFERENCE).
+lane: FULL
+
+# --- the question (QROS-PREREG-CONTENT 1-2) --------------------------------
+research_question: >
+  Does the synthetic feature SYNTH_FEATURE_A, computed on the synthetic series
+  SYNTH_SERIES_A, carry information about that series' next-period synthetic
+  return after synthetic costs?
+
+hypothesis: >
+  SYNTH_FEATURE_A has a non-zero association with the next-period synthetic
+  return of SYNTH_SERIES_A.
+
+mechanism: >
+  Stated rationale for why the association would exist. A rationale explains why
+  an effect might exist; it is not evidence that it does
+  (QROS-PURPOSE-MODEL-OUTPUT-NOT-EVIDENCE).
+
+# --- metric and scale (QROS-PREREG-CONTENT 4) ------------------------------
+# ALWAYS REQUIRED, whether or not a decision-relevant threshold exists. The
+# quantity, its units, its scale and its transformation must be stated well
+# enough for a reader to recompute it. `transformation: none` is a positive
+# claim that no transform is applied; leaving the field out is not.
+#
+# QROS-PREREG-METRIC-SCALE-CONSISTENCY: where a threshold DOES exist, it must
+# be expressed on this metric and this scale. A threshold describing a
+# different transformation, normalisation or horizon does not determine an
+# outcome and must not be sealed.
+metric:
+  name: SYNTH_METRIC_A
+  definition: >
+    Exactly how the quantity is computed, in terms a reader can reimplement.
+  units: dimensionless
+  scale: ratio                         # e.g. ratio | absolute | log | percentage-points
+  transformation: none                 # any transform applied before the rules read it
+  horizon: one synthetic period
+
+# --- decision-relevant threshold (QROS-PREREG-CONTENT 3) -------------------
+# Conditional by structure, not by a placeholder number. Where the question has
+# no magnitude-based decision threshold, set applicable:false and give a reason;
+# `value` is then absent, not zero and not null.
+decision_threshold:
+  applicable: true
+  kind: SESOI                          # SESOI | MDE | OTHER
+  value: 0.15
+  metric_ref: SYNTH_METRIC_A           # MUST name the metric above
+  scale_ref: ratio                     # MUST match metric.scale
+  basis: >
+    Why this is the smallest value that would change the decision.
+  # not_applicable_reason: <required instead of `value` when applicable:false>
+
+# --- sample (QROS-PREREG-CONTENT 5) ---------------------------------------
+sample:
+  definition: >
+    What data is in scope: source class, coverage, inclusion and exclusion rules.
+  identity: SAMPLE_SYNTHETIC_A
+  period: "synthetic period 0001 through 3000"
+  inclusion_rules:
+    - Stated inclusion rule 1.
+  exclusion_rules:
+    - Stated exclusion rule 1.
+  reserved_portion:
+    exists: true
+    identity: SAMPLE_SYNTHETIC_A_RESERVED
+    definition: >
+      The portion excluded from fitting, selection, window choice and
+      exploration. Reserving it in words is not reserving it in fact; state how
+      the exclusion is enforced.
+    enforcement: >
+      The mechanism that prevents this portion being read during development.
+
+# --- decision rules, in evaluation order (QROS-PREREG-CONTENT 6) -----------
+decision_rules:
+  - order: 1
+    condition: "SYNTH_METRIC_A < 0.15"
+    outcome: not_promoted
+    note: Evaluated first.
+  - order: 2
+    condition: "SYNTH_METRIC_A >= 0.15"
+    outcome: supported
+    note: Evaluated only if rule 1 did not fire.
+
+# --- kill conditions and their reachability (QROS-PREREG-KILL-REACHABILITY) -
+# A branch no attainable measurement can reach provides no protection while
+# appearing to. Demonstrate reachability from inputs available in advance.
+kill_conditions:
+  - id: KILL_SYNTHETIC_1
+    condition: "SYNTH_METRIC_A <= -0.05"
+    consequence: >
+      What ends or redirects if this fires.
+    reachability:
+      demonstrated: true
+      method: >
+        How reachability was established ex ante — e.g. the attainable range of
+        the measurand under the sample definition, computed before sealing.
+      attainable_range: "[-0.60, 0.60]"
+      evidence_ref: EVIDENCE_SYNTHETIC_REACHABILITY_1
+      bounded_region: true             # false where a one-sided threshold is
+                                       # used but the true kill region is bounded
+
+# --- rule-domain analysis (QROS-PREREG-RULE-DOMAIN-ANALYSIS) ---------------
+# Each rule evaluated at the extremes of its input's attainable domain, before
+# sealing. Catches contradictory, jointly unsatisfiable or degenerate rules that
+# are invisible at typical values.
+rule_domain_analysis:
+  performed: true
+  performed_at: "2000-01-01T00:00:00Z"
+  evidence_ref: EVIDENCE_SYNTHETIC_DOMAIN_1
+  rules_examined:
+    - rule_ref: 1
+      at_minimum: "fires"
+      at_maximum: "does not fire"
+      degenerate: false
+    - rule_ref: KILL_SYNTHETIC_1
+      at_minimum: "fires"
+      at_maximum: "does not fire"
+      degenerate: false
+  contradictions_found: []
+  jointly_unsatisfiable: []
+
+# --- trial accounting (QROS-AXIS-TRIAL-ACCOUNTING) -------------------------
+# QROS prescribes no counting formula. Record the method THIS project declares.
+# `adjustment_method` is a free string; leave it NONE where none is used.
+trial_accounting:
+  planned_comparison_count: 1
+  family_definition: >
+    What set of comparisons is treated as one family for this project's method.
+  adjustment_method: NONE
+  accounting_reference: ACCOUNTING_SYNTHETIC_001
+  scope: >
+    What the accounting rule governs, and what it does not.
+  counters:
+    - sample_ref: SAMPLE_SYNTHETIC_A
+      prior_effective_attempts: 0
+      this_study_adds: 1
+
+# --- known prior reuse (QROS-REUSE-DECLARE-BEFORE-USE) --------------------
+# Declared BEFORE consequential use. Empty list means none is known — which is
+# a claim, not an absence of thought.
+prior_reuse_declarations: []
+  # - declaration_ref: REUSE_SYNTHETIC_001
+  #   sample_ref: SAMPLE_SYNTHETIC_A
+
+# --- known outcome exposure (QROS-AXIS-OUTCOME-EXPOSURE) ------------------
+# Exposure is a property of a PARTY with respect to a QUESTION or TARGET, never
+# of the artifact globally. Level ∈ NONE | AGGREGATE | TARGET_METRIC | UNKNOWN.
+# UNKNOWN is treated as potentially exposed and is never simplified to NONE.
+outcome_exposure:
+  - party: ROLE_BINDING_MAIN_AGENT
+    target: SYNTH_METRIC_A
+    level: NONE
+    as_of: "2000-01-01T00:00:00Z"
+  - party: ROLE_BINDING_OWNER
+    target: SYNTH_METRIC_A
+    level: NONE
+    as_of: "2000-01-01T00:00:00Z"
+
+# --- lineage and amendments (QROS-PREREG-LINEAGE) -------------------------
+# Amendments made BEFORE sealing are design evolution and belong here.
+# Departures from an already-sealed contract are change-controlled instead
+# (QROS-CHANGE-LABELS) and are NOT recorded as pre-seal amendments.
+lineage:
+  supersedes: NONE
+  amendments: []
+    # - amendment_id: AMEND_SYNTHETIC_1
+    #   at: "2000-01-01T00:00:00Z"
+    #   what_changed: <the specific change>
+    #   rationale: <why>
+    #   prior_digest: <digest of the pre-amendment content>
+    #   # QROS-PREREG-RECHECK-AFTER-AMENDMENT: all three pre-seal checks re-run
+    #   rechecks_after_amendment:
+    #     kill_reachability: RE_RUN
+    #     metric_scale_consistency: RE_RUN
+    #     rule_domain_analysis: RE_RUN
+
+# --- reviewer-contributed design elements (QROS-PRESEAL-CONTRIBUTION-RECORDED)
+# Recorded BEFORE sealing and disclosed at any later certification. Criticism is
+# not co-authorship: a reviewer becomes a material contributor only by supplying
+# an element that is adopted.
+reviewer_contributions: []
+  # - review_ref: REVIEW_SYNTHETIC_001
+  #   contributor: ROLE_BINDING_INDEPENDENT_REVIEWER
+  #   element_supplied: <hypothesis | threshold | sample definition |
+  #                      decision rule | kill condition | statistical procedure>
+  #   adopted: true
+  #   consequence_for_certification: >
+  #     Which independence dimension is absent with respect to this element,
+  #     stated per dimension and per target (QROS-INDEP-STATE-PER-DIMENSION).
+
+# --- seal (QROS-PREREG-SEAL-BEFORE-EXPOSURE) ------------------------------
+# Sealed BEFORE any party involved is exposed to the target metric. A
+# preregistration written or amended after exposure is not a preregistration.
+seal:
+  state: DRAFT                         # DRAFT | SEALED
+  # sealed_at: <required when state is SEALED>
+  # content_digest: <required when state is SEALED — digest of the sealed content>
+  # sealed_by: <required when state is SEALED>

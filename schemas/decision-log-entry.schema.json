@@ -1,0 +1,458 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "decision-log-entry.schema.json",
+  "title": "QROS decision-log entry",
+  "description": "Validates a single entry of templates/decision-log.md. Enforces the three entry kinds of QROS-RECORD-DECISION-LOG-APPEND-ONLY, the gate vocabulary of QROS-OWNER-GATE-LIST, the verdict vocabulary of QROS-REVIEW-VERDICTS, and the per-execution authorisation semantics of QROS-OWNER-REAL-RUN. A review that never became valid returns no verdict and therefore produces no entry of this kind at all, which is why no invalid-review branch exists here.",
+  "type": "object",
+  "required": [
+    "entry_id",
+    "kind",
+    "recorded_at"
+  ],
+  "properties": {
+    "entry_id": {
+      "$ref": "common.schema.json#/$defs/Identifier"
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "OWNER_DECISION",
+        "REVIEW_VERDICT",
+        "CORRECTION"
+      ]
+    },
+    "recorded_at": {
+      "$ref": "common.schema.json#/$defs/Timestamp"
+    }
+  },
+  "oneOf": [
+    {
+      "title": "OWNER_DECISION",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "entry_id",
+        "kind",
+        "recorded_at",
+        "decided_by",
+        "gate",
+        "decision",
+        "subject"
+      ],
+      "properties": {
+        "entry_id": {
+          "$ref": "common.schema.json#/$defs/Identifier"
+        },
+        "kind": {
+          "const": "OWNER_DECISION"
+        },
+        "recorded_at": {
+          "$ref": "common.schema.json#/$defs/Timestamp"
+        },
+        "decided_by": {
+          "const": "OWNER"
+        },
+        "gate": {
+          "$ref": "common.schema.json#/$defs/OwnerGate"
+        },
+        "decision": {
+          "type": "string",
+          "enum": [
+            "AUTHORIZED",
+            "DECLINED",
+            "DEFERRED",
+            "REVOKED"
+          ]
+        },
+        "subject": {
+          "type": "string",
+          "minLength": 1
+        },
+        "basis": {
+          "type": "string"
+        },
+        "reveal": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "reveal_target",
+            "reveal_scope"
+          ],
+          "properties": {
+            "reveal_target": {
+              "type": "string",
+              "minLength": 1
+            },
+            "reveal_scope": {
+              "type": "string",
+              "minLength": 1
+            },
+            "result_record": {
+              "type": "string"
+            }
+          }
+        },
+        "disposition": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "disposition",
+            "subject_ref"
+          ],
+          "properties": {
+            "disposition": {
+              "type": "string",
+              "minLength": 1
+            },
+            "subject_ref": {
+              "type": "string",
+              "minLength": 1
+            },
+            "evidence_refs": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "methodology_change": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "change_label",
+            "what_changed"
+          ],
+          "properties": {
+            "change_label": {
+              "$ref": "common.schema.json#/$defs/ChangeLabel"
+            },
+            "what_changed": {
+              "type": "string",
+              "minLength": 1
+            },
+            "prior_seal_ref": {
+              "type": "string"
+            },
+            "new_seal_ref": {
+              "type": "string"
+            },
+            "prior_evidence_disposition": {
+              "type": "string"
+            }
+          }
+        },
+        "public_release": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "release_scope"
+          ],
+          "properties": {
+            "release_scope": {
+              "type": "string",
+              "minLength": 1
+            },
+            "assurance_ref": {
+              "type": "string"
+            }
+          }
+        },
+        "destructive_mutation": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "mutation_type",
+            "target",
+            "irreversible"
+          ],
+          "properties": {
+            "mutation_type": {
+              "type": "string",
+              "minLength": 1
+            },
+            "target": {
+              "type": "string",
+              "minLength": 1
+            },
+            "irreversible": {
+              "type": "boolean"
+            },
+            "recovery_path": {
+              "type": "string"
+            }
+          }
+        },
+        "execution": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "execution_ref",
+            "purpose",
+            "data_identity",
+            "code_identity"
+          ],
+          "properties": {
+            "execution_ref": {
+              "$ref": "common.schema.json#/$defs/Identifier"
+            },
+            "data_identity": {
+              "type": "string",
+              "minLength": 1
+            },
+            "code_identity": {
+              "type": "string",
+              "minLength": 1
+            },
+            "purpose": {
+              "type": "string",
+              "minLength": 1
+            },
+            "identity_verified_before_start": {
+              "type": "boolean"
+            }
+          },
+          "description": "The execution this authorisation covers. One authorisation covers exactly one execution (QROS-OWNER-REAL-RUN); a further execution requires a further authorisation. The recorded identities are re-verified before the execution begins."
+        }
+      },
+      "allOf": [
+        {
+          "$comment": "QROS-OWNER-REAL-RUN: an authorised real-data execution names the single execution it authorises. There is no envelope, class, or standing authorisation covering future runs.",
+          "if": {
+            "properties": {
+              "gate": {
+                "const": "QROS-OWNER-REAL-RUN"
+              },
+              "decision": {
+                "const": "AUTHORIZED"
+              }
+            },
+            "required": [
+              "gate",
+              "decision"
+            ]
+          },
+          "then": {
+            "required": [
+              "execution"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "gate": {
+                "const": "QROS-OWNER-REVEAL"
+              },
+              "decision": {
+                "const": "AUTHORIZED"
+              }
+            },
+            "required": [
+              "gate",
+              "decision"
+            ]
+          },
+          "then": {
+            "required": [
+              "reveal"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "gate": {
+                "const": "QROS-OWNER-METHODOLOGY-CHANGE"
+              },
+              "decision": {
+                "const": "AUTHORIZED"
+              }
+            },
+            "required": [
+              "gate",
+              "decision"
+            ]
+          },
+          "then": {
+            "required": [
+              "methodology_change"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "gate": {
+                "const": "QROS-OWNER-DESTRUCTIVE-MUTATION"
+              },
+              "decision": {
+                "const": "AUTHORIZED"
+              }
+            },
+            "required": [
+              "gate",
+              "decision"
+            ]
+          },
+          "then": {
+            "required": [
+              "destructive_mutation"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "title": "REVIEW_VERDICT",
+      "$comment": "Exists only where a VALID review returned one of the three verdicts. There is no fourth value and no invalid-review variant.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "entry_id",
+        "kind",
+        "recorded_at",
+        "review_id",
+        "round",
+        "reviewer_role",
+        "verdict",
+        "attestation_ref",
+        "round_consumed"
+      ],
+      "properties": {
+        "entry_id": {
+          "$ref": "common.schema.json#/$defs/Identifier"
+        },
+        "kind": {
+          "const": "REVIEW_VERDICT"
+        },
+        "recorded_at": {
+          "$ref": "common.schema.json#/$defs/Timestamp"
+        },
+        "review_id": {
+          "$ref": "common.schema.json#/$defs/Identifier"
+        },
+        "issue_lineage": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "round": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "round_budget": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "reviewer_role": {
+          "type": "string",
+          "enum": [
+            "INDEPENDENT_REVIEWER",
+            "ARCHITECTURE_REVIEWER"
+          ]
+        },
+        "reviewer_id": {
+          "$ref": "common.schema.json#/$defs/RoleBinding"
+        },
+        "verdict": {
+          "$ref": "common.schema.json#/$defs/ReviewVerdict"
+        },
+        "attestation_ref": {
+          "$ref": "common.schema.json#/$defs/Identifier"
+        },
+        "attestation_digest": {
+          "$ref": "common.schema.json#/$defs/Digest"
+        },
+        "brief_digest": {
+          "$ref": "common.schema.json#/$defs/Digest"
+        },
+        "blindness_required": {
+          "$ref": "common.schema.json#/$defs/BlindnessLevel"
+        },
+        "blindness_achieved": {
+          "$ref": "common.schema.json#/$defs/BlindnessLevel"
+        },
+        "blocking_finding_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "backlog_rows_opened": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "round_consumed": {
+          "type": "string",
+          "enum": [
+            "YES",
+            "NO"
+          ]
+        }
+      },
+      "if": {
+        "properties": {
+          "verdict": {
+            "const": "HOLD"
+          }
+        },
+        "required": [
+          "verdict"
+        ]
+      },
+      "then": {
+        "required": [
+          "blocking_finding_ids"
+        ],
+        "properties": {
+          "blocking_finding_ids": {
+            "minItems": 1
+          }
+        }
+      }
+    },
+    {
+      "title": "CORRECTION",
+      "$comment": "Corrects the record, never the history. It does not reverse a decision or change a verdict.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "entry_id",
+        "kind",
+        "recorded_at",
+        "corrects_entry",
+        "what_was_wrong",
+        "correct_record"
+      ],
+      "properties": {
+        "entry_id": {
+          "$ref": "common.schema.json#/$defs/Identifier"
+        },
+        "kind": {
+          "const": "CORRECTION"
+        },
+        "recorded_at": {
+          "$ref": "common.schema.json#/$defs/Timestamp"
+        },
+        "corrects_entry": {
+          "$ref": "common.schema.json#/$defs/Identifier"
+        },
+        "recorded_by": {
+          "$ref": "common.schema.json#/$defs/RoleBinding"
+        },
+        "what_was_wrong": {
+          "type": "string",
+          "minLength": 1
+        },
+        "correct_record": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  ]
+}

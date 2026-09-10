@@ -1,0 +1,359 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "review-dispatch.schema.json",
+  "title": "QROS review dispatch",
+  "description": "Validates the record produced by templates/dispatch.md. Enforces QROS-REVIEW-MANDATORY-TRIGGERS (a dispatch names its trigger), QROS-REVIEW-ROUND-BUDGET (only a returned review consumes a round), QROS-REVIEW-ROUND-SCOPE, QROS-BLIND-PRE-FREEZE-SET, QROS-BLIND-MATCHING-RULE-FIXED-BEFORE-EXPOSURE and QROS-BLIND-IS-TRANSPORT. Dispatch statuses are operational states, never verdicts.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "review_id",
+    "project_id",
+    "round",
+    "round_budget",
+    "trigger_source",
+    "artifact_id",
+    "producer_id",
+    "required_role",
+    "blindness_required",
+    "manifest_id",
+    "status",
+    "round_consumed"
+  ],
+  "properties": {
+    "review_id": {
+      "$ref": "common.schema.json#/$defs/Identifier"
+    },
+    "project_id": {
+      "$ref": "common.schema.json#/$defs/Identifier"
+    },
+    "work_item": {
+      "$ref": "common.schema.json#/$defs/Identifier"
+    },
+    "issue_lineage": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "round": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "round_budget": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "prepared_at": {
+      "$ref": "common.schema.json#/$defs/Timestamp"
+    },
+    "prepared_by": {
+      "$ref": "common.schema.json#/$defs/RoleBinding"
+    },
+    "trigger_source": {
+      "description": "QROS-REVIEW-MANDATORY-TRIGGERS: baseline triggers, project-configured additional triggers, or an explicit OWNER request. A dispatch with no valid trigger should not exist.",
+      "type": "string",
+      "enum": [
+        "BASELINE",
+        "CONFIGURED",
+        "OWNER_REQUEST"
+      ]
+    },
+    "trigger_ref": {
+      "type": "string",
+      "minLength": 1
+    },
+    "artifact_id": {
+      "$ref": "common.schema.json#/$defs/Identifier"
+    },
+    "artifact_digest": {
+      "$ref": "common.schema.json#/$defs/Digest"
+    },
+    "claim_under_review": {
+      "type": "string",
+      "minLength": 1
+    },
+    "producer_id": {
+      "$ref": "common.schema.json#/$defs/RoleBinding"
+    },
+    "producer_role": {
+      "type": "string",
+      "minLength": 1
+    },
+    "round_scope": {
+      "description": "QROS-REVIEW-ROUND-SCOPE. Required from round 2 onward: a review after a repair covers the repair plus a producer-declared, reviewer-contestable impact scope.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "declared_impact_scope",
+        "scope_contestable"
+      ],
+      "properties": {
+        "repair_ref": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "declared_impact_scope": {
+          "type": "string",
+          "minLength": 1
+        },
+        "scope_contestable": {
+          "type": "boolean",
+          "const": true
+        }
+      }
+    },
+    "required_role": {
+      "type": "string",
+      "enum": [
+        "INDEPENDENT_REVIEWER",
+        "ARCHITECTURE_REVIEWER"
+      ]
+    },
+    "required_independence": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/IndependenceStatement"
+      }
+    },
+    "must_not_be": {
+      "type": "string",
+      "minLength": 1
+    },
+    "reviewer_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "blindness_required": {
+      "$ref": "common.schema.json#/$defs/BlindnessLevel"
+    },
+    "isolation_mechanism": {
+      "$ref": "common.schema.json#/$defs/IsolationMechanism"
+    },
+    "boundary": {
+      "$ref": "common.schema.json#/$defs/BoundaryRecord"
+    },
+    "brief_id": {
+      "$ref": "common.schema.json#/$defs/Identifier"
+    },
+    "brief_digest": {
+      "$ref": "common.schema.json#/$defs/Digest"
+    },
+    "matching_rules_fixed_at": {
+      "$ref": "common.schema.json#/$defs/Timestamp"
+    },
+    "judgment_bearing_rules": {
+      "description": "QROS-BLIND-MATCHING-RULE-FIXED-BEFORE-EXPOSURE: where judgment-bearing rules exist they are fixed in the brief before dispatch, so the brief and the time it was fixed must be recorded.",
+      "type": "string",
+      "enum": [
+        "PRESENT",
+        "NONE"
+      ]
+    },
+    "manifest_id": {
+      "$ref": "common.schema.json#/$defs/Identifier"
+    },
+    "manifest_digest": {
+      "$ref": "common.schema.json#/$defs/Digest"
+    },
+    "manifest_entries": {
+      "description": "QROS-BLIND-PRE-FREEZE-SET: the pre-freeze set is exhaustive and each entry carries a digest the reviewer recomputes.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "item",
+          "digest"
+        ],
+        "properties": {
+          "item": {
+            "type": "string",
+            "minLength": 1
+          },
+          "digest": {
+            "$ref": "common.schema.json#/$defs/Digest"
+          },
+          "reason": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "permitted_actions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "prohibited_actions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "status": {
+      "description": "Operational dispatch state. NOT a verdict, and deliberately disjoint from the verdict vocabulary.",
+      "type": "string",
+      "enum": [
+        "PREPARED",
+        "DISPATCHED",
+        "RETURNED",
+        "TRANSPORT_FAILED",
+        "WITHDRAWN"
+      ]
+    },
+    "dispatched_at": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "returned_at": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "round_consumed": {
+      "type": "string",
+      "enum": [
+        "YES",
+        "NO",
+        "PENDING"
+      ]
+    },
+    "attestation_ref": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "$comment": "QROS-REVIEW-ROUND-BUDGET: a round is consumed only by a dispatched review that returned a substantive verdict. Every other status consumes nothing.",
+      "if": {
+        "properties": {
+          "status": {
+            "enum": [
+              "PREPARED",
+              "WITHDRAWN",
+              "TRANSPORT_FAILED"
+            ]
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "round_consumed": {
+            "const": "NO"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "RETURNED"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "then": {
+        "required": [
+          "attestation_ref",
+          "returned_at"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "DISPATCHED"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "then": {
+        "required": [
+          "reviewer_id",
+          "dispatched_at"
+        ]
+      }
+    },
+    {
+      "$comment": "A review round after the first covers the repair plus a declared impact scope.",
+      "if": {
+        "properties": {
+          "round": {
+            "minimum": 2
+          }
+        },
+        "required": [
+          "round"
+        ]
+      },
+      "then": {
+        "required": [
+          "round_scope"
+        ]
+      }
+    },
+    {
+      "$comment": "Where blindness is required, the boundary and the brief that fixes the matching rules must be recorded before dispatch.",
+      "if": {
+        "properties": {
+          "blindness_required": {
+            "enum": [
+              "CLAIM_BLIND",
+              "OUTCOME_BLIND"
+            ]
+          }
+        },
+        "required": [
+          "blindness_required"
+        ]
+      },
+      "then": {
+        "required": [
+          "isolation_mechanism",
+          "boundary",
+          "brief_id",
+          "brief_digest",
+          "judgment_bearing_rules"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "judgment_bearing_rules": {
+            "const": "PRESENT"
+          }
+        },
+        "required": [
+          "judgment_bearing_rules"
+        ]
+      },
+      "then": {
+        "required": [
+          "matching_rules_fixed_at",
+          "brief_digest"
+        ]
+      }
+    }
+  ]
+}

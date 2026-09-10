@@ -1,0 +1,156 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "sample-reuse-declaration.schema.json",
+  "title": "QROS sample reuse declaration",
+  "description": "Validates the declaration block of templates/sample-reuse.md. Enforces QROS-REUSE-DECLARE-BEFORE-USE, QROS-REUSE-EXPOSURE-VS-TRIALS (exposure and accounting are separate required records, neither derived from the other), QROS-REUSE-NEGATIVE-CONSUMES and QROS-AXIS-OUTCOME-EXPOSURE. Structure and declared invariants only; it cannot judge whether a justification is scientifically adequate or a sample genuinely independent.",
+
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "declaration_id", "project_id", "declared_by", "declared_at",
+    "declared_before_use", "sample", "prior_uses", "prior_exposure",
+    "prior_trial_accounting", "proposed_use", "will_compute",
+    "will_not_compute", "justification", "resulting_exposure",
+    "resulting_trial_accounting"
+  ],
+
+  "properties": {
+    "declaration_id": { "$ref": "common.schema.json#/$defs/Identifier" },
+    "project_id": { "$ref": "common.schema.json#/$defs/Identifier" },
+    "work_item": { "$ref": "common.schema.json#/$defs/Identifier" },
+    "declared_by": { "$ref": "common.schema.json#/$defs/RoleBinding" },
+    "declared_at": { "$ref": "common.schema.json#/$defs/Timestamp" },
+
+    "declared_before_use": {
+      "description": "false records a retrospective declaration. The obligation in QROS-REUSE-DECLARE-BEFORE-USE was then not met, and the schema requires that to be stated rather than left implicit.",
+      "type": "boolean"
+    },
+    "retrospective_reason": { "type": "string", "minLength": 1 },
+
+    "sample": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["identity", "definition"],
+      "properties": {
+        "identity": { "$ref": "common.schema.json#/$defs/Identifier" },
+        "class": { "type": "string", "minLength": 1 },
+        "definition": { "type": "string", "minLength": 1 }
+      }
+    },
+
+    "prior_uses": {
+      "description": "Every prior use, including those that produced a negative result (QROS-REUSE-NEGATIVE-CONSUMES). outcome_recorded states that a result exists; it never states what the result was.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["use_ref", "what_was_done", "outcome_recorded"],
+        "properties": {
+          "use_ref": { "$ref": "common.schema.json#/$defs/Identifier" },
+          "what_was_done": { "type": "string", "minLength": 1 },
+          "outcome_recorded": { "type": "boolean" },
+          "negative_result": { "type": "boolean" }
+        }
+      }
+    },
+
+    "prior_exposure": {
+      "description": "QROS-AXIS-OUTCOME-EXPOSURE, per party and target.",
+      "type": "array",
+      "items": { "$ref": "common.schema.json#/$defs/ExposureRecord" }
+    },
+
+    "prior_trial_accounting": {
+      "description": "Separate from exposure by QROS-REUSE-EXPOSURE-VS-TRIALS.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["accounting_reference"],
+      "properties": {
+        "accounting_reference": { "$ref": "common.schema.json#/$defs/Identifier" },
+        "prior_effective_attempts": { "type": "integer", "minimum": 0 },
+        "constraints_carried": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["must_not_be_retested_for", "basis"],
+            "properties": {
+              "must_not_be_retested_for": { "type": "string", "minLength": 1 },
+              "basis": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      }
+    },
+
+    "proposed_use": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["summary", "lane", "claim_intended"],
+      "properties": {
+        "summary": { "type": "string", "minLength": 1 },
+        "lane": { "$ref": "common.schema.json#/$defs/Lane" },
+        "claim_intended": { "type": "string", "minLength": 1 }
+      }
+    },
+
+    "will_compute": {
+      "description": "What this use WILL compute. Required and non-empty: a reuse that computes nothing is not a reuse.",
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 }
+    },
+
+    "will_not_compute": {
+      "description": "What this use WILL NOT compute. Required and non-empty because the scope of an examination determines how much selection freedom it consumes; an unbounded examination is indistinguishable from an unlimited one.",
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 }
+    },
+
+    "justification": {
+      "description": "Why the reuse is valid for THIS claim. A new preregistration does not restore freshness (QROS-REUSE-NEW-SEAL-NO-REFRESH).",
+      "type": "string",
+      "minLength": 1
+    },
+
+    "resulting_exposure": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "common.schema.json#/$defs/ExposureRecord" }
+    },
+
+    "resulting_trial_accounting": {
+      "description": "The project's declared accounting method applied. `basis` is required so the number is traceable to a declared method rather than invented here.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["effective_attempts_added", "basis", "accounting_reference"],
+      "properties": {
+        "effective_attempts_added": { "type": "integer", "minimum": 0 },
+        "basis": { "type": "string", "minLength": 1 },
+        "accounting_reference": { "$ref": "common.schema.json#/$defs/Identifier" }
+      }
+    },
+
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["required"],
+      "properties": {
+        "required": { "type": "boolean" },
+        "decision_ref": { "$ref": "common.schema.json#/$defs/Identifier" }
+      },
+      "if": { "properties": { "required": { "const": true } }, "required": ["required"] },
+      "then": { "required": ["decision_ref"] }
+    }
+  },
+
+  "if": {
+    "properties": { "declared_before_use": { "const": false } },
+    "required": ["declared_before_use"]
+  },
+  "then": {
+    "$comment": "A retrospective declaration must say why it is retrospective. This makes an undeclared reuse visible rather than allowing it to pass as an ordinary declaration.",
+    "required": ["retrospective_reason"]
+  }
+}

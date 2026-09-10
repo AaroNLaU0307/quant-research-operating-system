@@ -1,0 +1,99 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "backlog-row.schema.json",
+  "title": "QROS blocker / backlog row",
+  "description": "Validates a single row of templates/backlog.md. Enforces QROS-BLOCKER-CLASSES and QROS-BLOCKER-ADMISSION. Three genuinely different row shapes are discriminated on `class` rather than merged, so that a non-blocking backlog row is never required to carry a fabricated threat class or failure path, and a transport failure is never recorded as a finding against the work.",
+
+  "type": "object",
+  "required": ["id", "class", "status"],
+
+  "properties": {
+    "id": { "$ref": "common.schema.json#/$defs/Identifier" },
+    "class": { "$ref": "common.schema.json#/$defs/BlockerClass" },
+    "status": { "type": "string", "enum": ["OPEN", "CLOSED"] }
+  },
+
+  "oneOf": [
+    {
+      "title": "Blocking row",
+      "$comment": "QROS-BLOCKER-ADMISSION: admitted only with exactly one threat class AND a concrete failure path on the current or next stage. `evidence_to_clear` is required so every row has a defined exit; a row that cannot be closed is not admissible.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id", "class", "threat_class", "failure_path", "stage_affected",
+        "evidence_for_row", "evidence_to_clear", "opened_by", "opened_at", "status"
+      ],
+      "properties": {
+        "id": { "$ref": "common.schema.json#/$defs/Identifier" },
+        "class": { "type": "string", "enum": ["CURRENT_PATH_BLOCKER", "ARCHITECTURE_LEVEL_BLOCKER"] },
+        "threat_class": { "$ref": "common.schema.json#/$defs/ThreatClass" },
+        "failure_path": { "type": "string", "minLength": 1 },
+        "stage_affected": { "type": "string", "enum": ["CURRENT", "NEXT"] },
+        "evidence_for_row": { "$ref": "common.schema.json#/$defs/EvidenceClass" },
+        "evidence_reference": { "type": "string" },
+        "evidence_to_clear": { "type": "string", "minLength": 1 },
+        "opened_by": { "$ref": "common.schema.json#/$defs/RoleBinding" },
+        "opened_by_role": { "$ref": "common.schema.json#/$defs/Role" },
+        "opened_at": { "$ref": "common.schema.json#/$defs/Timestamp" },
+        "expires": { "type": ["string", "null"] },
+        "status": { "type": "string", "enum": ["OPEN", "CLOSED"] },
+        "closed_at": { "type": "string" },
+        "closing_evidence": { "type": "string" }
+      },
+      "allOf": [
+        {
+          "$comment": "QROS-BLOCKER-CLOSED-STAYS-CLOSED: a closed row keeps the evidence that closed it.",
+          "if": { "properties": { "status": { "const": "CLOSED" } }, "required": ["status"] },
+          "then": { "required": ["closed_at", "closing_evidence"] }
+        }
+      ]
+    },
+
+    {
+      "title": "Non-blocking backlog row",
+      "$comment": "A different shape by design. `threat_class` and `failure_path` are PROHIBITED here, not merely optional, so the blocker/backlog distinction cannot be eroded by filling a blocker shape with invented values.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "class", "item", "kind", "source", "disposition", "status"],
+      "properties": {
+        "id": { "$ref": "common.schema.json#/$defs/Identifier" },
+        "class": { "const": "NON_BLOCKING_BACKLOG" },
+        "item": { "type": "string", "minLength": 1 },
+        "kind": {
+          "description": "Free project vocabulary. Deliberately NOT the threat vocabulary: a backlog row names no threat.",
+          "type": "string",
+          "minLength": 1
+        },
+        "source": { "type": "string", "minLength": 1 },
+        "disposition": { "type": "string", "minLength": 1 },
+        "notes": { "type": "string" },
+        "status": { "type": "string", "enum": ["OPEN", "CLOSED"] },
+        "closed_at": { "type": "string" },
+        "closing_evidence": { "type": "string" }
+      }
+    },
+
+    {
+      "title": "Unsatisfied-gate row",
+      "$comment": "QROS-BLOCKER-TRANSPORT-NOT-IMPLEMENTATION: a transport or seating failure leaves a gate unsatisfied, establishes nothing about the work, and consumes no round. It carries no threat class and no failure path, because none was demonstrated.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "class", "gate_unsatisfied", "what_failed", "round_consumed", "remedy", "status"],
+      "properties": {
+        "id": { "$ref": "common.schema.json#/$defs/Identifier" },
+        "class": {
+          "type": "string",
+          "enum": ["TRANSPORT_OR_PACKAGING_FAILURE", "REVIEWER_ELIGIBILITY_OR_PROCEDURAL_FAILURE"]
+        },
+        "gate_unsatisfied": { "type": "string", "minLength": 1 },
+        "what_failed": { "type": "string", "minLength": 1 },
+        "established_about_work": { "type": "string", "enum": ["NOTHING"] },
+        "round_consumed": { "const": "NO" },
+        "remedy": { "type": "string", "minLength": 1 },
+        "status": { "type": "string", "enum": ["OPEN", "CLOSED"] },
+        "closed_at": { "type": "string" },
+        "closing_evidence": { "type": "string" }
+      }
+    }
+  ]
+}
