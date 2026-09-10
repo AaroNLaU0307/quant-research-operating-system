@@ -1,0 +1,101 @@
+# Blockers and backlog — PROJECT_SYNTHETIC_001
+#
+# Each row validates against ../../schemas/backlog-row.schema.json.
+# Rows are closed, never deleted (QROS-BLOCKER-CLOSED-STAYS-CLOSED).
+
+updated_at: "2000-01-06T16:00:00Z"
+updated_by: ROLE_BINDING_MAIN_AGENT
+open_blockers: 0
+open_backlog: 2
+
+# --- 1. CURRENT BLOCKERS -------------------------------------------------
+# Zero open rows. B-1 was admitted, then closed by clearing evidence.
+current_blockers: []
+
+# --- closed blocker history ----------------------------------------------
+closed_blockers:
+  - id: B-1
+    class: CURRENT_PATH_BLOCKER
+    threat_class: RESEARCH_CORRECTNESS
+    failure_path: >
+      The signal dated at period t contains the return of period t+1, so the
+      information coefficient measures the signal against a target it already
+      holds. On the current stage that value is the input to the sealed
+      decision table: rule 2 would fire, the candidate would be recorded as
+      supported, and the reserved sample would be spent on an artefact.
+    stage_affected: CURRENT
+    evidence_for_row: REPRODUCED
+    evidence_reference: >
+      ATT_SYNTHETIC_R1 finding F1: independent recomputation gives 0.064635
+      against the producer's 0.331216, a difference of 0.266581 against a
+      tolerance of 0.001 fixed before exposure
+    evidence_to_clear: >
+      the signal window computed over r[t-k+1 : t+1] as the sealed definition
+      states, plus a standing check that fails on the defective form
+    opened_by: ROLE_BINDING_INDEPENDENT_REVIEWER
+    opened_by_role: INDEPENDENT_REVIEWER
+    opened_at: "2000-01-05T11:00:00Z"
+    status: CLOSED
+    closed_at: "2000-01-06T11:00:00Z"
+    closing_evidence: >
+      REPAIR_SYNTHETIC_F1 changed the window bounds; checks.py check 5
+      (truncation invariance) fails on the retained round-1 form and passes on
+      the repaired one, so the check is not vacuous; ATT_SYNTHETIC_R2 by a
+      fresh seat recomputed 0.064635 independently and found no discrepancy.
+
+# --- 2. NON-BLOCKING BACKLOG ---------------------------------------------
+# A different row shape by design: no threat class, no failure path. These are
+# not blockers and must not be given invented ones to fit the blocker shape.
+backlog:
+  - id: N-1
+    class: NON_BLOCKING_BACKLOG
+    item: >
+      The mechanical check set covered shape, nullity, alignment and
+      determinism only; none of those could distinguish a leaked signal from a
+      correct one. Consider what other classes of defect the set is currently
+      blind to.
+    kind: check-coverage
+    source: ATT_SYNTHETIC_R1 out-of-scope observation
+    disposition: >
+      partially addressed already by the truncation-invariance check added in
+      REPAIR_SYNTHETIC_F1; the general question is unscheduled
+    notes: >
+      Recorded rather than acted on. The study proceeded with this row open
+      (QROS-COMPLETION-PROGRESSION).
+    status: OPEN
+
+  - id: N-2
+    class: NON_BLOCKING_BACKLOG
+    item: >
+      Record the generated sample digest alongside the seed, so a changed
+      generator is detectable rather than silent.
+    kind: reproducibility-ergonomics
+    source: ATT_SYNTHETIC_R2 finding F2
+    disposition: for any future study that reuses this generator
+    notes: >
+      Non-blocking on the current path: the generator is deterministic, the
+      seed is in the sealed preregistration, and both review manifests pinned
+      the sample digest.
+    status: OPEN
+
+# --- candidates examined and NOT admitted --------------------------------
+# Recorded so the admission test is demonstrably exercised rather than assumed.
+not_admitted:
+  - candidate: >
+      The information coefficient is small enough that a different window
+      length might do better.
+    why_not: >
+      Not a threat and not a defect. It is a proposal for a new question, and
+      the sealed study's stop rule forecloses pursuing it under this
+      preregistration (QROS-COMPLETION-STOP-RULE).
+  - candidate: >
+      The synthetic generating process is unrealistic.
+    why_not: >
+      True and deliberate. It is a property of the example, not a failure path
+      on the current or next stage of this study.
+  - candidate: >
+      A stronger general guard against look-ahead could exist beyond the
+      truncation-invariance check.
+    why_not: >
+      "A stronger safeguard is conceivable" is explicitly not admissible
+      (QROS-COMPLETION-NO-SPECULATIVE-BLOCKER).

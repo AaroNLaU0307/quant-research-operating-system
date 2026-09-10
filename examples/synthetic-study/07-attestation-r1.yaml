@@ -1,0 +1,128 @@
+# Attestation — round 1 — validated against ../../schemas/review-attestation.schema.json
+#
+# INDEPENDENT_VERIFICATION. Produced by a party that did not produce the
+# analysis, from a separately constructed evidence surface, frozen before any
+# comparand was delivered.
+
+review_id: REVIEW_SYNTHETIC_001
+project_id: PROJECT_SYNTHETIC_001
+issue_lineage: LINEAGE_SYNTHETIC_IC
+round: 1
+brief_id: BRIEF_SYNTHETIC_R1
+brief_digest: "7922260cb83e6a6c1519b87514a19e4c5a64451c86d21466613fb3f9e0f9ee81"
+reviewer_id: ROLE_BINDING_INDEPENDENT_REVIEWER
+reviewer_role: INDEPENDENT_REVIEWER
+returned_at: "2000-01-05T11:00:00Z"
+
+# --- validity ------------------------------------------------------------
+manifest_id: MANIFEST_SYNTHETIC_R1
+manifest_verified: MATCH
+surface_sufficient: true
+not_the_producer: true
+not_a_subagent_of_producer: true
+not_a_prior_reviewer_in_lineage: null
+
+independence:
+  - dimension: CONTEXT_INDEPENDENCE
+    required: true
+    satisfied: "YES"
+    with_respect_to: the session that produced the analysis
+  - dimension: AUTHORSHIP_INDEPENDENCE
+    required: true
+    satisfied: "YES"
+    with_respect_to: >
+      the analysis implementation; the recomputation was written from the
+      sealed definition without sight of analyze.py
+  - dimension: EMPIRICAL_INDEPENDENCE
+    required: false
+    satisfied: NOT_APPLICABLE
+    with_respect_to: >
+      the same development sample; this is a recomputation, not a replication
+      on independent data, and nothing here supports the word replication
+independence_shortfalls: null
+
+blindness_required: OUTCOME_BLIND
+blindness_achieved: OUTCOME_BLIND
+isolation_mechanism: SEPARATE_EVIDENCE_SURFACE
+boundary:
+  reachable_from_environment: the four manifest items only
+  inaccessible_by_boundary: >
+    analyze.py, the builder evidence record, the research-state page, the
+    decision log, and the reserved sample - none present in the review directory
+  boundary_established_by: separately constructed evidence surface
+
+exposure_before_freeze: null
+commands_run:
+  - sha256 recomputation of all four manifest entries
+  - "python verify.py --data data/sample_development.csv --freeze frozen_result.json"
+modules_executed_not_inspected: []
+
+review_validity: VALID
+
+# --- freeze --------------------------------------------------------------
+frozen_result_path: frozen_result.json
+frozen_result_digest: "64c1f3d1e9606a5acf51e3b5272a0f214cc85d459e52ebe474900643b0002ea5"
+frozen_at: "2000-01-05T10:20:00Z"
+freeze_marker_written: true
+
+# --- comparison ----------------------------------------------------------
+comparands_received_at: "2000-01-05T10:35:00Z"
+discrepancies: >
+  The producer's reported information coefficient is 0.331216. The
+  independently recomputed value, frozen before the producer's figure was
+  delivered, is 0.064635. The absolute difference is 0.266581, which exceeds
+  the 0.001 tolerance fixed in the brief before exposure.
+frozen_result_unmodified_after_comparands: true
+
+# --- findings ------------------------------------------------------------
+findings:
+  - id: F1
+    blocking: true
+    threat_class: RESEARCH_CORRECTNESS
+    evidence_class: REPRODUCED
+    evidence: >
+      Independent recomputation from the sealed definition gives 0.064635
+      against the producer's 0.331216. On receiving the producer's
+      implementation after the freeze, the cause is visible in one line: the
+      signal window is written as r[t-k+2 : t+2], which ends at t+1 and
+      therefore contains r_{t+1}. r_{t+1} is the quantity the signal is asked
+      to predict. Removing that one period from the window reproduces the
+      recomputed value exactly.
+    failure_path: >
+      The signal dated at period t contains the return of period t+1. The
+      correlation therefore measures the signal against a target it already
+      holds, and the reported 0.331216 is arithmetic on leaked data rather
+      than a measurement of predictive information. On the current stage this
+      value is the input to the sealed decision table: rule 2 would fire, the
+      candidate would be recorded as supported, and the reserved sample would
+      be spent on a candidate whose apparent edge is an artefact of the
+      implementation.
+    smallest_scope: >
+      the window bounds of the signal construction in the analysis
+      implementation; one line, and no other part of the pipeline
+    minimal_fix: >
+      compute the signal over r[t-k+1 : t+1] so the window ends at t, as the
+      sealed definition states
+    minimal_test: >
+      a truncation-invariance check: recompute the signal on a prefix of the
+      sample and confirm that no signal value at a period inside the prefix
+      changes when later data is withheld
+
+out_of_scope_observations:
+  - >
+    The four mechanical checks that were run cover shape, nullity, alignment
+    and determinism only. Every one of them passes identically on the leaked
+    and the correct implementation. This is not a finding against the result;
+    it is a gap in the check set, and belongs in backlog.
+
+# --- verdict -------------------------------------------------------------
+verdict: HOLD
+blocking_finding_ids:
+  - F1
+
+round_consumed: "YES"
+dispatch_ref: REVIEW_SYNTHETIC_001
+decision_log_entry: E-1
+backlog_rows_opened:
+  - B-1
+  - N-1

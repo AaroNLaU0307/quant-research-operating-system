@@ -1,0 +1,109 @@
+# Attestation — round 2 of 2 — validated against ../../schemas/review-attestation.schema.json
+
+review_id: REVIEW_SYNTHETIC_002
+project_id: PROJECT_SYNTHETIC_001
+issue_lineage: LINEAGE_SYNTHETIC_IC
+round: 2
+brief_id: BRIEF_SYNTHETIC_R2
+brief_digest: "bca610a0a038212add18f1f4b732e8e2564ab71effd22b35a3e6f8c99be7beed"
+reviewer_id: ROLE_BINDING_INDEPENDENT_REVIEWER_2
+reviewer_role: INDEPENDENT_REVIEWER
+returned_at: "2000-01-06T11:00:00Z"
+
+# --- validity ------------------------------------------------------------
+manifest_id: MANIFEST_SYNTHETIC_R2
+manifest_verified: MATCH
+surface_sufficient: true
+not_the_producer: true
+not_a_subagent_of_producer: true
+not_a_prior_reviewer_in_lineage: true
+
+independence:
+  - dimension: CONTEXT_INDEPENDENCE
+    required: true
+    satisfied: "YES"
+    with_respect_to: the producing session and the round-1 review session
+  - dimension: AUTHORSHIP_INDEPENDENCE
+    required: true
+    satisfied: "YES"
+    with_respect_to: the analysis implementation and the repair
+  - dimension: EMPIRICAL_INDEPENDENCE
+    required: false
+    satisfied: NOT_APPLICABLE
+    with_respect_to: >
+      the same development sample as round 1; this is a recomputation and
+      supports no claim of replication
+independence_shortfalls: null
+
+blindness_required: OUTCOME_BLIND
+blindness_achieved: OUTCOME_BLIND
+isolation_mechanism: SEPARATE_EVIDENCE_SURFACE
+boundary:
+  reachable_from_environment: the six manifest items only
+  inaccessible_by_boundary: >
+    the round-1 attestation and its frozen value, the builder evidence
+    records, the research-state page, the decision log, the reserved sample
+  boundary_established_by: >
+    a separately constructed evidence surface, rebuilt for this round
+
+exposure_before_freeze: null
+commands_run:
+  - sha256 recomputation of all six manifest entries
+  - "python verify.py --data data/sample_development.csv --freeze frozen_result.json"
+  - "python checks.py --data data/sample_development.csv"
+modules_executed_not_inspected: []
+
+review_validity: VALID
+
+# --- freeze --------------------------------------------------------------
+frozen_result_path: frozen_result.json
+frozen_result_digest: "64c1f3d1e9606a5acf51e3b5272a0f214cc85d459e52ebe474900643b0002ea5"
+frozen_at: "2000-01-06T10:15:00Z"
+freeze_marker_written: true
+
+# --- comparison ----------------------------------------------------------
+comparands_received_at: "2000-01-06T10:30:00Z"
+discrepancies: >
+  None. The producer's reported information coefficient is 0.064635 and the
+  independently recomputed value, frozen before that figure was delivered, is
+  0.064635. The absolute difference is 0.000000, inside the 0.001 tolerance
+  fixed in the brief. Paired observations are 2990 in both, matching the
+  producer's declared impact scope. The truncation-invariance check passes on
+  the repaired implementation and, run against the retained round-1 form,
+  fails - so the check is not vacuous.
+frozen_result_unmodified_after_comparands: true
+
+# --- findings ------------------------------------------------------------
+findings:
+  - id: F2
+    blocking: false
+    threat_class: REPRODUCIBILITY
+    evidence_class: REASONED
+    evidence: >
+      The study's data is regenerated from a seed rather than committed, so a
+      reader who changes the generator changes the sample without any recorded
+      signal that they have done so.
+    failure_path: >
+      Not a current-path failure: the generator is deterministic, its seed is
+      recorded in the sealed preregistration, and the manifest pins the sample
+      digest that this review verified. A future study reusing this generator
+      would want the sample digest recorded alongside the seed.
+    smallest_scope: the sample identity record in a future study
+    minimal_fix: record the generated sample digest next to the seed
+    minimal_test: compare the regenerated sample digest against the recorded one
+
+out_of_scope_observations:
+  - >
+    The declared impact scope was checked and found adequate: the pairing,
+    sample identity and observation count are unchanged, and the diff touches
+    one expression.
+
+# --- verdict -------------------------------------------------------------
+verdict: PASS_WITH_BACKLOG
+blocking_finding_ids: []
+
+round_consumed: "YES"
+dispatch_ref: REVIEW_SYNTHETIC_002
+decision_log_entry: E-2
+backlog_rows_opened:
+  - N-2

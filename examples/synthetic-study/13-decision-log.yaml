@@ -1,0 +1,126 @@
+# Decision log — PROJECT_SYNTHETIC_001
+#
+# Append-only. Each entry validates against
+# ../../schemas/decision-log-entry.schema.json.
+#
+# Entries are never edited, reordered or removed. E-1 stays HOLD; its
+# resolution is a later entry, not a rewrite (QROS-RECORD-DECISION-LOG-APPEND-ONLY).
+
+project_id: PROJECT_SYNTHETIC_001
+entry_count: 4
+
+index:
+  - entry: E-1
+    date: "2000-01-05T11:30:00Z"
+    kind: REVIEW_VERDICT
+    subject: round 1 independent recomputation
+    outcome: HOLD on F1
+  - entry: E-2
+    date: "2000-01-06T11:30:00Z"
+    kind: REVIEW_VERDICT
+    subject: round 2 independent recomputation after repair
+    outcome: PASS_WITH_BACKLOG
+  - entry: E-3
+    date: "2000-01-06T14:00:00Z"
+    kind: OWNER_DECISION
+    subject: reveal the verified statistic to the decision-maker
+    outcome: AUTHORIZED
+  - entry: E-4
+    date: "2000-01-06T15:00:00Z"
+    kind: OWNER_DECISION
+    subject: disposition of STUDY_SYNTHETIC_001
+    outcome: AUTHORIZED - not_promoted
+
+entries:
+
+  - entry_id: E-1
+    kind: REVIEW_VERDICT
+    recorded_at: "2000-01-05T11:30:00Z"
+    review_id: REVIEW_SYNTHETIC_001
+    issue_lineage: LINEAGE_SYNTHETIC_IC
+    round: 1
+    round_budget: 2
+    reviewer_role: INDEPENDENT_REVIEWER
+    reviewer_id: ROLE_BINDING_INDEPENDENT_REVIEWER
+    verdict: HOLD
+    attestation_ref: ATT_SYNTHETIC_R1
+    attestation_digest: "73620b27ae580b5a5eed320e1857b5822d7eb3bc408e6fe5ee337e7a79e5de02"
+    brief_digest: "7922260cb83e6a6c1519b87514a19e4c5a64451c86d21466613fb3f9e0f9ee81"
+    blindness_required: OUTCOME_BLIND
+    blindness_achieved: OUTCOME_BLIND
+    blocking_finding_ids:
+      - F1
+    backlog_rows_opened:
+      - B-1
+      - N-1
+    round_consumed: "YES"
+
+  - entry_id: E-2
+    kind: REVIEW_VERDICT
+    recorded_at: "2000-01-06T11:30:00Z"
+    review_id: REVIEW_SYNTHETIC_002
+    issue_lineage: LINEAGE_SYNTHETIC_IC
+    round: 2
+    round_budget: 2
+    reviewer_role: INDEPENDENT_REVIEWER
+    reviewer_id: ROLE_BINDING_INDEPENDENT_REVIEWER_2
+    verdict: PASS_WITH_BACKLOG
+    attestation_ref: ATT_SYNTHETIC_R2
+    attestation_digest: "eb0be7319c33f9111e92a0381ce0a29cbc26f929bc587c479c84665f4d580dcc"
+    brief_digest: "bca610a0a038212add18f1f4b732e8e2564ab71effd22b35a3e6f8c99be7beed"
+    blindness_required: OUTCOME_BLIND
+    blindness_achieved: OUTCOME_BLIND
+    blocking_finding_ids: []
+    backlog_rows_opened:
+      - N-2
+    round_consumed: "YES"
+
+  - entry_id: E-3
+    kind: OWNER_DECISION
+    recorded_at: "2000-01-06T14:00:00Z"
+    decided_by: OWNER
+    gate: QROS-OWNER-REVEAL
+    decision: AUTHORIZED
+    subject: >
+      Reveal the independently verified information coefficient of
+      STUDY_SYNTHETIC_001 to the decision-maker, so the sealed decision table
+      can be applied.
+    basis: >
+      The statistic has been independently recomputed twice from the sealed
+      definition, by two seats neither of which produced it, both outcome-blind
+      until their own result was frozen. The blocking finding of round 1 is
+      closed with clearing evidence. No blocker remains open.
+    reveal:
+      reveal_target: >
+        ROLE_BINDING_OWNER, who has been unexposed to the statistic until this
+        point
+      reveal_scope: >
+        the single verified information coefficient and its paired-observation
+        count; nothing further
+      result_record: frozen_result.json, sha256 64c1f3d1e9606a5acf51e3b5272a0f214cc85d459e52ebe474900643b0002ea5
+
+  - entry_id: E-4
+    kind: OWNER_DECISION
+    recorded_at: "2000-01-06T15:00:00Z"
+    decided_by: OWNER
+    gate: QROS-OWNER-DISPOSITION
+    decision: AUTHORIZED
+    subject: >
+      Disposition of STUDY_SYNTHETIC_001 after applying the sealed decision
+      table to the revealed statistic.
+    basis: >
+      The verified information coefficient is 0.064635. Sealed decision rule 1
+      is evaluated first and fires: the value is below the preregistered
+      threshold of 0.15. Rule 2 is therefore not reached. The kill condition
+      KILL_SYNTHETIC_1 (absolute value at or below 0.02) does not fire, so the
+      line is not falsified - it is simply not worth carrying forward on this
+      evidence. The threshold was not changed, the preregistration was not
+      amended, and the reserved sample SAMPLE_SYNTHETIC_RESERVED was never
+      opened.
+    disposition:
+      disposition: not_promoted
+      subject_ref: STUDY_SYNTHETIC_001
+      evidence_refs:
+        - ATT_SYNTHETIC_R2
+        - frozen_result.json
+        - 01-preregistration.yaml decision_rules order 1

@@ -1,0 +1,17 @@
+{
+  "record": "SEAL",
+  "prereg_id": "PREREG_SYNTHETIC_001",
+  "prereg_version": 1,
+  "study_id": "STUDY_SYNTHETIC_001",
+  "sealed_at": "2000-01-03T10:00:00Z",
+  "sealed_by": "ROLE_BINDING_OWNER",
+  "content_digest": "bb8f114e8d60cbfebf85bc6f1e478845949fd661b43272664d0721ceee851405",
+  "digest_method": "sha256 over the preregistration's parsed contract fields excluding the `seal` block, serialised as JSON with sorted keys and no whitespace",
+  "reproduce": "python -c \"import yaml,json,hashlib;d=yaml.safe_load(open('01-preregistration.yaml',encoding='utf-8'));b={k:v for k,v in d.items() if k!='seal'};print(hashlib.sha256(json.dumps(b,sort_keys=True,separators=(',',':'),ensure_ascii=False).encode()).hexdigest())\"",
+  "exposure_at_seal": {
+    "ROLE_BINDING_MAIN_AGENT": "NONE",
+    "ROLE_BINDING_OWNER": "NONE",
+    "ROLE_BINDING_INDEPENDENT_REVIEWER": "NONE"
+  },
+  "note": "Sealed before any statistic was computed. QROS-PREREG-SEAL-BEFORE-EXPOSURE. Any later change to the contract fields changes this digest and is therefore detectable."
+}

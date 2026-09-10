@@ -1,0 +1,107 @@
+# Review dispatch — round 2 of 2 — validated against ../../schemas/review-dispatch.schema.json
+#
+# Same issue lineage as round 1. The lineage is NOT relabelled: a repair does
+# not earn a fresh budget.
+
+review_id: REVIEW_SYNTHETIC_002
+project_id: PROJECT_SYNTHETIC_001
+work_item: STUDY_SYNTHETIC_001
+issue_lineage: LINEAGE_SYNTHETIC_IC
+round: 2
+round_budget: 2
+prepared_at: "2000-01-06T09:00:00Z"
+prepared_by: ROLE_BINDING_OWNER
+
+trigger_source: BASELINE
+trigger_ref: "baseline item 2 - the final result that a decision rule reads, before it is revealed to the decision-maker"
+
+artifact_id: ARTIFACT_SYNTHETIC_ANALYSIS_R2
+artifact_digest: "3295e85b37936ef05cf9b005bfc366a37a3e7716ae86f013ea0e447a7cdcbb2f"
+claim_under_review: >
+  Does the repaired signal construction match the sealed definition, is the
+  producer's declared impact scope adequate, and what is the information
+  coefficient that follows?
+producer_id: ROLE_BINDING_MAIN_AGENT
+producer_role: MAIN_AGENT
+
+round_scope:
+  repair_ref: REPAIR_SYNTHETIC_F1
+  declared_impact_scope: >
+    The change affects the construction of signal_t and nothing else. It cannot
+    affect the sample, the pairing of signal to target, the correlation
+    arithmetic, or the count of paired observations, which remains 2990.
+  scope_contestable: true
+
+required_role: INDEPENDENT_REVIEWER
+required_independence:
+  - dimension: CONTEXT_INDEPENDENCE
+    required: true
+    satisfied: "YES"
+    with_respect_to: the producing session and the round-1 review session
+  - dimension: AUTHORSHIP_INDEPENDENCE
+    required: true
+    satisfied: "YES"
+    with_respect_to: the analysis implementation and the repair
+  - dimension: EMPIRICAL_INDEPENDENCE
+    required: false
+    satisfied: NOT_APPLICABLE
+    with_respect_to: the same development sample; a recomputation, not a replication
+must_not_be: >
+  the producing session; a subagent of it; the round-1 reviewer, whose frozen
+  value must not reach this seat before it freezes its own
+
+blindness_required: OUTCOME_BLIND
+isolation_mechanism: SEPARATE_EVIDENCE_SURFACE
+boundary:
+  reachable_from_environment: the six manifest items only
+  inaccessible_by_boundary: >
+    the round-1 attestation and its frozen value, the builder evidence records,
+    the research-state page, the decision log, and the reserved sample
+  boundary_established_by: >
+    a separately constructed evidence surface, rebuilt for this round rather
+    than reused from round 1
+
+brief_id: BRIEF_SYNTHETIC_R2
+brief_digest: "bca610a0a038212add18f1f4b732e8e2564ab71effd22b35a3e6f8c99be7beed"
+matching_rules_fixed_at: "2000-01-06T09:00:00Z"
+judgment_bearing_rules: PRESENT
+
+manifest_id: MANIFEST_SYNTHETIC_R2
+manifest_digest: "1119613752132c43e86c287c15a1affe4a258d6bd8d6ef3a5ceb34b4c80e1077"
+manifest_entries:
+  - item: data/sample_development.csv
+    digest: "2d4556d0daaee0af54260b09d87718707f42d1bd9381229aea379aed64565e2e"
+    reason: the raw sample
+  - item: 01-preregistration.yaml
+    digest: "e230241c11220dc2cc070c2d58ef8207928a6723f5eed62f8cc4d1c5551b9dfe"
+    reason: the sealed metric definition; sealed before any outcome existed
+  - item: verify.py
+    digest: "2ddc1f548625970f57aab45d809154b73c7afea3c2226eea5cf7907c227137b3"
+    reason: the recomputation instrument
+  - item: 10-brief-r2.md
+    digest: "bca610a0a038212add18f1f4b732e8e2564ab71effd22b35a3e6f8c99be7beed"
+    reason: the brief, carrying the matching rules fixed before exposure
+  - item: analyze.py
+    digest: "4b3c279bed0f9a205744217f0e069ac369c1e74f0ac6f997b9a9712ca7d96454"
+    reason: >
+      the repaired implementation; in the pre-freeze set this round because
+      properties 2 and 3 require inspecting the change itself
+  - item: checks.py
+    digest: "10067b8a56677def18f0fca22e4765bb3e016fd8061fc5204a36b32a9a3e2ec8"
+    reason: the check set including the regression test added by the repair
+
+permitted_actions:
+  - recompute every manifest digest before substantive work
+  - "python verify.py --data data/sample_development.csv --freeze frozen_result.json"
+  - "python checks.py --data data/sample_development.csv"
+prohibited_actions:
+  - reading the round-1 attestation or its frozen value before the freeze point
+  - opening the reserved sample SAMPLE_SYNTHETIC_RESERVED
+  - searching outside the review directory for governing authority
+
+status: RETURNED
+dispatched_at: "2000-01-06T09:30:00Z"
+returned_at: "2000-01-06T11:00:00Z"
+round_consumed: "YES"
+attestation_ref: ATT_SYNTHETIC_R2
+reviewer_id: ROLE_BINDING_INDEPENDENT_REVIEWER_2

@@ -1,0 +1,96 @@
+# Review dispatch — round 1 — validated against ../../schemas/review-dispatch.schema.json
+
+review_id: REVIEW_SYNTHETIC_001
+project_id: PROJECT_SYNTHETIC_001
+work_item: STUDY_SYNTHETIC_001
+issue_lineage: LINEAGE_SYNTHETIC_IC
+round: 1
+round_budget: 2
+prepared_at: "2000-01-05T09:00:00Z"
+prepared_by: ROLE_BINDING_OWNER
+
+trigger_source: BASELINE
+trigger_ref: "baseline item 2 - the final result that a decision rule reads, before it is revealed to the decision-maker"
+
+artifact_id: ARTIFACT_SYNTHETIC_ANALYSIS_R1
+artifact_digest: "711b2c4f1e02901f01653c61c1d9ac73a942b710b9df269e55949836bf695945"
+claim_under_review: >
+  What is the information coefficient of the sealed signal against the next
+  period's return on the development sample, computed independently from the
+  raw sample and the sealed definition?
+producer_id: ROLE_BINDING_MAIN_AGENT
+producer_role: MAIN_AGENT
+
+required_role: INDEPENDENT_REVIEWER
+required_independence:
+  - dimension: CONTEXT_INDEPENDENCE
+    required: true
+    satisfied: "YES"
+    with_respect_to: the session that produced the analysis
+  - dimension: AUTHORSHIP_INDEPENDENCE
+    required: true
+    satisfied: "YES"
+    with_respect_to: the analysis implementation and the builder evidence record
+  - dimension: EMPIRICAL_INDEPENDENCE
+    required: false
+    satisfied: NOT_APPLICABLE
+    with_respect_to: >
+      the same development sample is used by both parties; this review
+      recomputes a statistic, it does not replicate a result on new data
+must_not_be: >
+  the producing session; a subagent of it; any party that has seen the
+  builder's claimed value
+
+blindness_required: OUTCOME_BLIND
+isolation_mechanism: SEPARATE_EVIDENCE_SURFACE
+boundary:
+  reachable_from_environment: >
+    a directory containing exactly the four manifest items below, copied in
+    for this review
+  inaccessible_by_boundary: >
+    the builder's implementation analyze.py, the builder evidence record
+    04-builder-evidence-r1.md, the research-state page, the decision log, and
+    the reserved sample SAMPLE_SYNTHETIC_RESERVED - none of which is present
+    in the review directory
+  boundary_established_by: >
+    a separately constructed evidence surface: the review directory is built
+    by copying the enumerated items into it, so material outside the manifest
+    is not reachable rather than merely forbidden
+
+brief_id: BRIEF_SYNTHETIC_R1
+brief_digest: "7922260cb83e6a6c1519b87514a19e4c5a64451c86d21466613fb3f9e0f9ee81"
+matching_rules_fixed_at: "2000-01-05T09:00:00Z"
+judgment_bearing_rules: PRESENT
+
+manifest_id: MANIFEST_SYNTHETIC_R1
+manifest_digest: "123b5a8147940125ad7e155f09ac007b9a8cf3934a89e155c9bbd362390395b0"
+manifest_entries:
+  - item: data/sample_development.csv
+    digest: "2d4556d0daaee0af54260b09d87718707f42d1bd9381229aea379aed64565e2e"
+    reason: the raw sample the statistic is computed from
+  - item: 01-preregistration.yaml
+    digest: "e230241c11220dc2cc070c2d58ef8207928a6723f5eed62f8cc4d1c5551b9dfe"
+    reason: >
+      the sealed metric definition and lineage; sealed before any outcome
+      existed, so it discloses nothing about the answer
+  - item: verify.py
+    digest: "2ddc1f548625970f57aab45d809154b73c7afea3c2226eea5cf7907c227137b3"
+    reason: the recomputation instrument, which imports nothing from the builder
+  - item: 06-brief-r1.md
+    digest: "7922260cb83e6a6c1519b87514a19e4c5a64451c86d21466613fb3f9e0f9ee81"
+    reason: the brief, carrying the matching rules fixed before exposure
+
+permitted_actions:
+  - "python verify.py --data data/sample_development.csv --freeze frozen_result.json"
+  - recompute every manifest digest before substantive work
+prohibited_actions:
+  - reading analyze.py or any builder record before the freeze point
+  - opening the reserved sample SAMPLE_SYNTHETIC_RESERVED
+  - searching outside the review directory for governing authority
+
+status: RETURNED
+dispatched_at: "2000-01-05T09:30:00Z"
+returned_at: "2000-01-05T11:00:00Z"
+round_consumed: "YES"
+attestation_ref: ATT_SYNTHETIC_R1
+reviewer_id: ROLE_BINDING_INDEPENDENT_REVIEWER
