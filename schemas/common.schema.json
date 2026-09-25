@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "common.schema.json",
   "title": "QROS shared definitions",
-  "description": "Closed vocabularies and shared primitives referenced by the other QROS schemas. Enforces the vocabularies fixed by SPEC.md; defines no rule of its own. SPEC.md is the sole normative source.",
+  "description": "Closed vocabularies and shared primitives referenced by the other QROS 2.0.0 schemas. Enforces the vocabularies fixed by SPEC.md; defines no rule of its own. SPEC.md is the sole normative source. The v1 definitions, including the retired review-transport primitives, are frozen under retired/v1/schemas/ and are never used for new work.",
   "$defs": {
     "Identifier": {
       "description": "A durable identifier. Opaque to the schema; uniqueness is a project concern.",
@@ -17,29 +17,51 @@
       "format": "date-time",
       "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?Z$"
     },
+    "Date": {
+      "description": "ISO 8601 calendar date, used for dated obligations.",
+      "type": "string",
+      "format": "date",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
     "Digest": {
       "description": "Lowercase hex content digest, 32-128 hex characters.",
       "type": "string",
       "pattern": "^[0-9a-f]{32,128}$"
     },
     "RoleBinding": {
-      "description": "Which concrete party filled a QROS role. Binding role to product is project configuration (QROS-ROLE-VENDOR-BINDING-IS-CONFIG); the schema constrains shape only, never vendor.",
+      "description": "Which concrete party filled a QROS role. Binding role to party is project configuration (QROS-ROLE-VENDOR-BINDING-IS-CONFIG); a record of what actually happened names the concrete party. The schema constrains shape only, never vendor.",
       "type": "string",
       "minLength": 1,
       "maxLength": 200
     },
     "Role": {
-      "description": "QROS capability roles. Closed (SPEC section 2).",
+      "description": "QROS roles (QROS-ROLE-OWNER, QROS-ROLE-DELEGATE, QROS-ROLE-BUILDER). Closed. The DELEGATE is optional; where none is appointed the OWNER holds the delegated gates.",
       "type": "string",
       "enum": [
         "OWNER",
-        "MAIN_AGENT",
-        "INDEPENDENT_REVIEWER",
-        "ARCHITECTURE_REVIEWER"
+        "DELEGATE",
+        "BUILDER"
       ]
     },
+    "Party": {
+      "description": "A role together with the concrete party that filled it (QROS-ROLE-VENDOR-BINDING-IS-CONFIG).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "role",
+        "party"
+      ],
+      "properties": {
+        "role": {
+          "$ref": "#/$defs/Role"
+        },
+        "party": {
+          "$ref": "#/$defs/RoleBinding"
+        }
+      }
+    },
     "Lane": {
-      "description": "QROS-AXIS-LANE. Governs which claims work may emit, and nothing else.",
+      "description": "QROS-AXIS-LANE. Governs which claims work may emit (QROS-LANE-CLAIM-SCOPE), and nothing else.",
       "type": "string",
       "enum": [
         "EXPLORATORY",
@@ -47,8 +69,29 @@
         "FULL"
       ]
     },
+    "LifecycleStage": {
+      "description": "QROS-LIFECYCLE-STAGES. A project may alias these names in configuration, recorded (QROS-CONFIG-CONFIGURABLE); the canonical set is closed.",
+      "type": "string",
+      "enum": [
+        "S0_FRAME",
+        "S1_DESIGN_SEAL",
+        "S2_BUILD",
+        "S3_RUN",
+        "S4_VERDICT",
+        "STOP"
+      ]
+    },
+    "S0Decision": {
+      "description": "The S0 decision of QROS-S0-DISCOVERY.",
+      "type": "string",
+      "enum": [
+        "RESEARCH",
+        "PARK",
+        "REJECT"
+      ]
+    },
     "ExposureLevel": {
-      "description": "QROS-AXIS-OUTCOME-EXPOSURE. UNKNOWN is treated as potentially exposed and is never simplified to NONE.",
+      "description": "QROS-AXIS-OUTCOME-EXPOSURE. A missing record means UNKNOWN, never NONE (QROS-EXPOSURE-MONOTONIC). UNKNOWN is treated as potentially exposed.",
       "type": "string",
       "enum": [
         "NONE",
@@ -58,7 +101,7 @@
       ]
     },
     "ExposureRecord": {
-      "description": "Exposure is a property of a PARTY with respect to a QUESTION or TARGET, never of an artifact globally (QROS-AXIS-OUTCOME-EXPOSURE). Both party and target are therefore required.",
+      "description": "Exposure is recorded per object and per party (QROS-AXIS-OUTCOME-EXPOSURE), so both party and target are required. Exposure is monotonic: once revealed, never regressed (QROS-EXPOSURE-MONOTONIC).",
       "type": "object",
       "additionalProperties": false,
       "required": [
@@ -85,122 +128,136 @@
         }
       }
     },
+    "BlindnessLevel": {
+      "description": "QROS-BLIND-LEVELS, with respect to a named outcome.",
+      "type": "string",
+      "enum": [
+        "OUTCOME_BLIND",
+        "OUTCOME_AWARE",
+        "UNKNOWN"
+      ]
+    },
+    "ResearchStatus": {
+      "description": "The research-status half of a verdict (QROS-VERDICT-VOCABULARY). Closed. When in doubt, not_promoted. There is no insufficient-evidence value; use unresolved.",
+      "type": "string",
+      "enum": [
+        "confirmed",
+        "supported",
+        "not_promoted",
+        "falsified",
+        "active",
+        "archived",
+        "experimental",
+        "unresolved"
+      ]
+    },
+    "Disposition": {
+      "description": "The disposition half of a verdict (QROS-VERDICT-VOCABULARY). Closed.",
+      "type": "string",
+      "enum": [
+        "RUN_TO_VERDICT",
+        "CLOSED_PRE_OUTCOME",
+        "PARKED_PRE_OUTCOME",
+        "NOT_STANDALONE"
+      ]
+    },
     "ReviewVerdict": {
-      "description": "QROS-REVIEW-VERDICTS. Exactly three values. A review that never became valid returned NO verdict and omits the field entirely; no sentinel value exists.",
+      "description": "QROS-REVIEW-VERDICTS. Exactly two values: PASS (move on; never widens scope) and HOLD (requires a blocking finding; buys one bounded repair).",
       "type": "string",
       "enum": [
         "PASS",
-        "PASS_WITH_BACKLOG",
         "HOLD"
       ]
     },
-    "ReviewValidity": {
-      "description": "Template structural branch, not a verdict. VALID reviews carry a verdict; INVALID reviews carry none.",
+    "AcceptanceOutcome": {
+      "description": "QROS-REVIEW-VERDICTS: the outcomes of DELEGATE acceptance in the delegated S2 loop.",
       "type": "string",
       "enum": [
-        "VALID",
-        "INVALID"
+        "ACCEPT",
+        "BOUNDED_REPAIR",
+        "ESCALATE_TO_GATE"
       ]
     },
     "EvidenceClass": {
-      "description": "QROS-REVIEW-EVIDENCE-CLASSES. SELF_REPORTED is never blocking on its own (QROS-REVIEW-SELF-REPORTED-NOT-BLOCKING).",
+      "description": "QROS-REVIEW-EVIDENCE-CLASSES. SELF-REPORTED never passes and never blocks on its own (QROS-REVIEW-SELF-REPORTED-NOT-BLOCKING).",
       "type": "string",
       "enum": [
         "REPRODUCED",
         "REASONED",
-        "SELF_REPORTED"
+        "SELF-REPORTED"
       ]
     },
-    "BaselineThreatClass": {
-      "description": "The six baseline classes of QROS-THREAT-VOCABULARY.",
+    "FindingClass": {
+      "description": "QROS-REVIEW-BLOCKING-REQUIREMENTS. Only BLOCKING holds; the others become backlog rows.",
       "type": "string",
       "enum": [
-        "RESEARCH_CORRECTNESS",
-        "REPRODUCIBILITY",
-        "DATA_IDENTITY_OR_PROVENANCE",
-        "INDEPENDENCE_OR_BLINDNESS",
-        "CONSEQUENTIAL_EXECUTION_SAFETY",
-        "METHODOLOGY_OR_SCOPE_INTEGRITY"
+        "BLOCKING",
+        "NON-BLOCKING",
+        "OPTIONAL",
+        "UNRELATED"
       ]
     },
     "ThreatClass": {
-      "$comment": "Closed vocabulary (QROS-THREAT-VOCABULARY). A project may not add, remove, merge or rename a class. A concern that fits none of these is non-blocking and belongs in backlog, not in an extended vocabulary.",
-      "description": "One of the six threat classes. Closed.",
-      "$ref": "#/$defs/BaselineThreatClass"
+      "$comment": "Closed at each version (QROS-THREAT-VOCABULARY). Not a configuration surface (QROS-CONFIG-TIGHTEN-ONLY).",
+      "description": "The failure modes QROS addresses.",
+      "type": "string",
+      "enum": [
+        "SELF_CERTIFICATION",
+        "OUTCOME_LEAKAGE",
+        "HINDSIGHT_SELECTION",
+        "SAME_SAMPLE_RETUNING",
+        "SILENT_REVIVAL",
+        "ONE_SHOT_REUSE",
+        "STALE_CURRENT_STATE",
+        "DERIVED_FACT_DRIFT",
+        "PRESENCE_ONLY_VALIDATION",
+        "UNPERSISTED_REVIEW",
+        "PROSE_ONLY_DATA_RULES",
+        "INVALID_MEASUREMENT",
+        "UNRESOLVABLE_DESIGN",
+        "GOVERNANCE_COST_EXCEEDING_RISK"
+      ]
     },
     "BlockerClass": {
-      "description": "QROS-BLOCKER-CLASSES. Closed; only CURRENT_PATH_BLOCKER and ARCHITECTURE_LEVEL_BLOCKER hold a project.",
+      "description": "QROS-BLOCKER-CLASSES. Closed; every blocker has exactly one. Only CURRENT_PATH_BLOCKER and ARCHITECTURE_LEVEL_BLOCKER hold a project.",
       "type": "string",
       "enum": [
         "CURRENT_PATH_BLOCKER",
         "NON_BLOCKING_BACKLOG",
-        "TRANSPORT_OR_PACKAGING_FAILURE",
-        "REVIEWER_ELIGIBILITY_OR_PROCEDURAL_FAILURE",
+        "TRANSPORT_OR_PACKAGING_ISSUE",
+        "REVIEW_SEAT_OR_PROCEDURAL_FAILURE",
         "ARCHITECTURE_LEVEL_BLOCKER"
       ]
     },
-    "BlindnessLevel": {
-      "description": "QROS-BLIND-LEVELS.",
+    "OwnerGate": {
+      "$comment": "Closed list (QROS-GATE-OWNER-RETAINED). Not a configuration surface (QROS-CONFIG-TIGHTEN-ONLY). Exercised or granted by the OWNER directly (QROS-GATE-NO-RELAY).",
+      "description": "The five actions only the OWNER performs or grants.",
       "type": "string",
       "enum": [
-        "CLAIM_BLIND",
-        "OUTCOME_BLIND",
-        "NONE"
-      ]
-    },
-    "IsolationMechanism": {
-      "$comment": "QROS-BLIND-IS-TRANSPORT: blindness is established by a separately constructed evidence surface, built outside the environment holding the material the reviewer must not reach, enumerated in advance and mechanically bounded. This is the mechanism, not one option among several; no alternative isolation architecture is recognised.",
-      "description": "The evidence-surface mechanism. Single permitted value.",
-      "type": "string",
-      "const": "SEPARATE_EVIDENCE_SURFACE"
-    },
-    "BoundaryRecord": {
-      "description": "What was technically reachable, what the boundary excluded, and how that boundary was established and checked (QROS-BLIND-IS-TRANSPORT).",
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "reachable_from_environment",
-        "inaccessible_by_boundary",
-        "boundary_established_by"
-      ],
-      "properties": {
-        "reachable_from_environment": {
-          "type": "string",
-          "minLength": 1
-        },
-        "inaccessible_by_boundary": {
-          "type": "string",
-          "minLength": 1
-        },
-        "boundary_established_by": {
-          "type": "string",
-          "minLength": 1
-        },
-        "boundary_verified_by": {
-          "type": "string",
-          "minLength": 1
-        }
-      }
-    },
-    "BaselineOwnerGate": {
-      "description": "The six reserved actions of QROS-OWNER-GATE-LIST. A project may add gates; it may not remove one.",
-      "type": "string",
-      "enum": [
-        "QROS-OWNER-REAL-RUN",
-        "QROS-OWNER-REVEAL",
-        "QROS-OWNER-DISPOSITION",
-        "QROS-OWNER-METHODOLOGY-CHANGE",
+        "QROS-OWNER-SPEND",
+        "QROS-OWNER-LIVE-CAPITAL",
+        "QROS-OWNER-CREDENTIALS",
         "QROS-OWNER-PUBLIC-RELEASE",
         "QROS-OWNER-DESTRUCTIVE-MUTATION"
       ]
     },
-    "OwnerGate": {
-      "$comment": "Closed list (QROS-OWNER-GATE-LIST). A project may not add, remove or rename a gate.",
-      "description": "One of the six reserved Owner actions. Closed.",
-      "$ref": "#/$defs/BaselineOwnerGate"
+    "DelegatedGate": {
+      "description": "The decisions of QROS-GATE-DELEGATED, decided by the DELEGATE informed by the BUILDER. The OWNER may take any of them back; where no DELEGATE is appointed the OWNER holds them.",
+      "type": "string",
+      "enum": [
+        "S0_DECISION",
+        "SEAL",
+        "RUN_AUTHORIZATION",
+        "STATISTICAL_REVEAL",
+        "S4_VERDICT",
+        "PROMOTION_FALSIFICATION_RETIREMENT_CLOSURE",
+        "SCOPE_OR_METHODOLOGY_CHANGE",
+        "DATA_ACCESS_BEYOND_GRANT",
+        "LOCAL_MERGE"
+      ]
     },
     "ChangeLabel": {
-      "description": "QROS-CHANGE-LABELS. Closed.",
+      "description": "QROS-CHANGE-LABELS. Closed; every post-seal change carries exactly one. IMPLEMENTATION_FIX and DATA_FIX are decided by the BUILDER; the other three by the DELEGATE.",
       "type": "string",
       "enum": [
         "IMPLEMENTATION_FIX",
@@ -210,36 +267,18 @@
         "HYPOTHESIS_CHANGE"
       ]
     },
-    "LifecycleStage": {
-      "description": "QROS-LIFECYCLE-STAGES. A project may alias these names in configuration; the canonical set is closed.",
-      "type": "string",
-      "enum": [
-        "DESIGN",
-        "PRE_SEAL_CHALLENGE",
-        "SEAL",
-        "BUILD",
-        "MECHANICAL_VERIFY",
-        "EVIDENCE",
-        "ANALYSIS",
-        "RISK_GATED_AUDIT",
-        "REPAIR_IF_REQUIRED",
-        "INDEPENDENT_VERIFICATION",
-        "OWNER_DECISION",
-        "RECORD"
-      ]
-    },
     "IndependenceDimension": {
-      "description": "The four kinds of QROS-INDEP-FOUR-KINDS. Only EMPIRICAL_INDEPENDENCE supports a replication claim.",
+      "description": "The four dimensions of QROS-INDEP-FOUR-KINDS. Only EMPIRICAL supports a replication claim (QROS-INDEP-REPLICATION-REQUIRES-EMPIRICAL).",
       "type": "string",
       "enum": [
-        "CONTEXT_INDEPENDENCE",
-        "AUTHORSHIP_INDEPENDENCE",
+        "CONTEXT",
+        "AUTHORSHIP",
         "MODEL_DIVERSITY",
-        "EMPIRICAL_INDEPENDENCE"
+        "EMPIRICAL"
       ]
     },
     "IndependenceStatement": {
-      "description": "Independence stated per dimension AND per target (QROS-INDEP-STATE-PER-DIMENSION). A statement without a target is not conforming, so target is required.",
+      "description": "Independence stated per dimension and per target (QROS-INDEP-STATE-PER-DIMENSION). Silence about a dimension means UNKNOWN.",
       "type": "object",
       "additionalProperties": false,
       "required": [
@@ -251,14 +290,12 @@
         "dimension": {
           "$ref": "#/$defs/IndependenceDimension"
         },
-        "required": {
-          "type": "boolean"
-        },
         "satisfied": {
           "type": "string",
           "enum": [
             "YES",
             "NO",
+            "UNKNOWN",
             "NOT_APPLICABLE"
           ]
         },

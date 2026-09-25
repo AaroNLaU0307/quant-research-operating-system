@@ -2,138 +2,115 @@
 
 What QROS defends against, how, and where the boundary sits.
 
-Explanatory. [SPEC.md](../SPEC.md) is the only normative source. Identifiers are
-pointers into it.
+Explanatory. [SPEC.md](../SPEC.md) (v2.0.0) is the only normative source.
+Identifiers are pointers into it.
 
 ---
 
-## The six threat classes
+## The threat vocabulary
 
-`QROS-THREAT-VOCABULARY` fixes exactly six classes. **The vocabulary is closed**:
-a project may not add, remove, merge, or rename one. A concern that fits none of
-them is not thereby unimportant — it is non-blocking, and belongs in backlog.
+`QROS-THREAT-VOCABULARY` names fourteen failure modes and is **closed at each
+version**. Each maps to the rules that address it:
 
-| Class | Covers |
+| Threat | Addressed by |
 |---|---|
-| `RESEARCH_CORRECTNESS` | the result does not follow from the evidence: a defect in method, computation, inference, or interpretation |
-| `REPRODUCIBILITY` | the result cannot be reproduced from recorded inputs, code, and procedure |
-| `DATA_IDENTITY_OR_PROVENANCE` | the data is not what it is recorded to be: wrong source, wrong period, undisclosed transformation, undeclared reuse, unresolved lineage |
-| `INDEPENDENCE_OR_BLINDNESS` | a certification is not independent, or a party judged information it should not have held |
-| `CONSEQUENTIAL_EXECUTION_SAFETY` | an action with irreversible or external effect may occur without its authorisation, or outside its authorised bounds |
-| `METHODOLOGY_OR_SCOPE_INTEGRITY` | the question, decision rule, or scope changed without the change being classified and recorded |
+| self-certification | `QROS-ROLE-SELF-CERTIFICATION`, `QROS-ROLE-SUBAGENT-NOT-INDEPENDENT`, `QROS-GATE-NO-SELF-AUTHORIZATION`, `QROS-ACCEPT-REPRODUCTION-FIRST` |
+| outcome leakage | `QROS-PREREG-SEAL-BEFORE-EXPOSURE`, `QROS-BLIND-ON-DEMAND`, `QROS-BLIND-REPO-NOT-BLIND`, `QROS-STATE-NOT-BLIND`, `QROS-BLIND-EXPOSURE-RESPONSE` |
+| hindsight selection | `QROS-PREREG-VERDICT-RULE`, `QROS-VERDICT-NO-DEPARTURE`, `QROS-BLIND-MATCHING-RULE-FIXED-BEFORE-EXPOSURE` |
+| same-sample retuning | `QROS-VERDICT-NO-RESCUE`, `QROS-COMPLETION-STOP-RULE`, `QROS-CHANGE-FIX-NOT-METHODOLOGY`, `QROS-REUSE-NEW-SEAL-NO-REFRESH` |
+| silent revival | `QROS-S0-ANTI-REVIVAL`, `QROS-LIFECYCLE-TERMINATES`, `QROS-BLOCKER-CLOSED-STAYS-CLOSED` |
+| one-shot reuse | `QROS-REUSE-LOCKBOX`, `QROS-RUN-ONE-SHOT-WRITE-AHEAD`, `QROS-RUN-FAIL-CLOSED` |
+| stale current state | `QROS-STATE-CURRENT-ARTIFACT`, `QROS-RECORD-CHECKPOINT`, `QROS-RECORD-CURRENT-VS-HISTORICAL` |
+| derived-fact drift | `QROS-RECORD-DERIVED-NOT-COPIED`, `QROS-RECORD-REPRODUCE-COMMAND` |
+| presence-only validation | `QROS-RECORD-PRESENT-AND-ABSENT`, `QROS-CHECK-NON-VACUOUS` |
+| unpersisted review | `QROS-REVIEW-PERSISTED`, `QROS-RECORD-DURABLE-NOT-TRANSCRIPT` |
+| prose-only data rules | `QROS-PREREG-ENFORCED-DATA-RULES` |
+| invalid measurement | `QROS-PREREG-VALIDITY-CHECKS`, `QROS-S0-POINT-IN-TIME-FIRST` |
+| unresolvable design | `QROS-PREREG-RESOLVABILITY`, `QROS-PREREG-KILL-REACHABILITY`, `QROS-PREREG-METRIC-SCALE-CONSISTENCY` |
+| governance cost exceeding risk | `QROS-COST-BUDGET`, `QROS-REVIEW-NOT-ROUTINE`, `QROS-REVIEW-ROUND-BUDGET`, `QROS-COMPLETION-PROGRESSION` |
 
-Six is a deliberate number. A vocabulary large enough to classify every concern
-would classify every concern as blocking, which is the same as having no filter.
-A closed vocabulary forces the question *which of these six is this?* — and
-"none of them" is a legitimate and common answer.
+Across all of them, exposure is monotonic (`QROS-EXPOSURE-MONOTONIC`): a
+missing record means `UNKNOWN`, never `NONE`.
 
-### Why the classes must stay closed
+### Why the vocabulary stays closed
 
-An extensible vocabulary defeats the filter it belongs to. Every project that
-finds a concern it cannot classify has a local reason to add a seventh class,
-and after a few of those the admission test admits everything. The pressure to
-extend is exactly the pressure the closed list exists to resist.
-
-The same reasoning closes the `OWNER` gate list (`QROS-OWNER-GATE-LIST`) and the
-blindness mechanism: a configurable safeguard is a safeguard that will be
-configured away at the moment it becomes inconvenient.
+An extensible vocabulary defeats the filter it belongs to: every project has a
+local reason to add an entry, and after a few of those everything qualifies. A
+new version may change the list; a project may not (`QROS-CONFIG-TIGHTEN-ONLY`).
+The same reasoning closes the retained-gate list (`QROS-GATE-OWNER-RETAINED`): a
+configurable safeguard gets configured away when it becomes inconvenient.
 
 ---
 
 ## Blocker admission
 
-**A concern is not automatically a blocker.** `QROS-BLOCKER-ADMISSION` admits an
-item to the blocker set only if it states both:
-
-1. **exactly one** of the six threat classes; and
-2. a **concrete failure path** on the **current or next** stage — the specific
-   sequence by which the defect produces a wrong, irreproducible, or unsafe
-   outcome.
-
-Plus, so the row has a defined exit: the evidence that would clear it. A row that
-cannot be closed is not admissible.
+**A concern is not automatically a blocker.** `QROS-BLOCKER-ADMISSION` admits
+an item only with a **named threat** and a **concrete failure path** on the
+**current or next** stage. Each row carries exactly one class
+(`QROS-BLOCKER-CLASSES`) and should state the evidence that would clear it.
 
 A statement that something is undesirable is not a failure path. Neither is a
 statement that something is wrong — a failure path says *what breaks next*.
 
-**Specifically not admissible:** a cleaner design is imaginable; a stronger
-general safeguard could exist; further review would add confidence; a document is
-inconsistent; a defect exists on a path this project will not take; a guard
-protecting a guard is missing.
+**Not admissible** (`QROS-COMPLETION-NO-SPECULATIVE-BLOCKER`): a cleaner design
+is imaginable; further review would add confidence; a defect exists on a path
+this project will not take.
 
-A blocking finding also carries an evidence class
-(`QROS-REVIEW-EVIDENCE-CLASSES`). `SELF_REPORTED` — restating what the producer
-already said — is never blocking on its own, because it adds no independent
-information. `REPRODUCED` and `REASONED` may both block; a well-formed reasoned
-finding blocks on the same terms as a reproduced one, since requiring execution
-before a design defect could be raised would exclude precisely the defects
-execution cannot reveal.
+A finding also carries an evidence class (`QROS-REVIEW-EVIDENCE-CLASSES`).
+`SELF-REPORTED` never passes and never blocks on its own
+(`QROS-REVIEW-SELF-REPORTED-NOT-BLOCKING`): it adds no independent information.
+`REPRODUCED` and `REASONED` may both block; requiring execution before a design
+defect could be raised would exclude precisely the defects execution cannot
+reveal.
 
 ### Worked illustration (synthetic)
 
 From the worked example, a finding that **was** admitted:
 
-> **Threat:** `RESEARCH_CORRECTNESS`.
-> **Failure path:** the signal dated at period *t* contains the return of period
-> *t+1*; the leaked value is the input to the sealed decision table; rule 2
-> fires; the candidate is recorded as supported; the reserved sample is spent on
-> an artefact.
-> **Evidence class:** `REPRODUCED`.
-> **Smallest scope:** the window bounds of one expression.
+> **Threat:** outcome leakage (look-ahead).
+> **Failure path:** the signal dated *t* contains the return of *t+1*; the
+> leaked value feeds the sealed decision table; rule 2 fires; the candidate is
+> recorded as supported; the reserved sample is spent on an artefact.
+> **Class:** real current-path blocker. **Evidence class:** `REPRODUCED`.
 
-And, from the same review, an observation that was **not** admitted and went to
-backlog instead:
+And an observation that was **not** admitted and went to backlog:
 
 > The mechanical check set covers shape, nullity, alignment and determinism
-> only, and none of those could distinguish a leaked signal from a correct one.
+> only; none could distinguish a leaked signal from a correct one.
 
 True, useful, and not a blocker: it names no failure path on the current or next
-stage. It was recorded, and the study proceeded.
+stage. It was recorded, and the study proceeded. Under v2 the gap is closed
+before seal (`QROS-PREREG-VALIDITY-CHECKS`, `QROS-PREREG-ENFORCED-DATA-RULES`).
 
 ---
 
 ## Transport failure is not implementation failure
 
-`QROS-BLOCKER-TRANSPORT-NOT-IMPLEMENTATION`.
+`QROS-BLOCKER-TRANSPORT-NOT-IMPLEMENTATION`. Acceptance can fail to happen
+validly: a bundle's digests do not recompute (the receiver must stop,
+`QROS-BLIND-ON-DEMAND`), a tool crashes, the reproduce command cannot run.
 
-A review can fail to happen validly: a manifest digest mismatches, the evidence
-surface turns out insufficient for a mandatory check, the reviewer was
-ineligible, or the reviewer was exposed to withheld material before freezing its
-own result.
+Such a failure **leaves the gate unsatisfied**, **establishes nothing about the
+work**, and **consumes no review round**. Repair the delivery and try again.
+Recording it as a defect enters an undemonstrated defect into the record and
+spends budget on something no code change addresses.
 
-Such a failure:
-
-- **leaves the required gate unsatisfied** — the work is not certified;
-- **establishes nothing about the work** — no defect was demonstrated;
-- **consumes no review round** — the budget is for disagreement, not delivery;
-- **is not a finding against the implementation** — no repair to the code could
-  fix it.
-
-The correct response is to repair the delivery and dispatch again. Recording it
-as an implementation defect produces two errors at once: a defect that was never
-demonstrated enters the record, and review budget is spent on something no code
-change addresses.
-
-A review that never became valid returned **no verdict**. There is no fourth
-verdict value for it — the verdict vocabulary is exactly `PASS`,
-`PASS_WITH_BACKLOG`, `HOLD`, and an invalid review simply carries none.
+An acceptance that never became valid returned **no outcome** — neither `PASS`
+nor `HOLD` (`QROS-REVIEW-VERDICTS`). Research verdicts are one separate
+vocabulary (`QROS-VERDICT-VOCABULARY`); a rule that cannot be applied yields
+`unresolved`, never a new term.
 
 ---
 
 ## Closed stays closed
 
-`QROS-BLOCKER-CLOSED-STAYS-CLOSED`. A closed item stays closed. Reopening
-**requires** new, concrete evidence of a failure on the current path, in exactly
-one of the six threat classes.
+`QROS-BLOCKER-CLOSED-STAYS-CLOSED`. Reopening **requires** new, concrete
+evidence of a failure on the current path — not a better approach, another
+reviewer's reassurance, or the concern restated more forcefully.
 
-None of the following reopens anything: a better approach has become apparent; a
-stronger safeguard is conceivable; another reviewer would add reassurance;
-historical wording could be improved; the same concern is restated more
-forcefully.
-
-Without this rule a project has no way to finish. Any settled question can be
-reopened by conviction alone, and the cost of reopening is borne by the people
-trying to answer the research question rather than by the person reopening it.
+Without this rule a project cannot finish. Any settled question can be reopened
+by conviction alone, and the cost is borne by those answering the research
+question rather than by the person reopening it.
 
 ---
 
@@ -141,51 +118,61 @@ trying to answer the research question rather than by the person reopening it.
 
 Stated plainly, because a threat model that lists only successes is marketing.
 
-- **A wrong prior.** If the hypothesis is misconceived, every rule here will be
+- **A wrong prior.** If the hypothesis is misconceived, every rule will be
   followed and the conclusion will still be worthless.
-- **Defective input data.** Provenance controls record what the data is claimed
-  to be and detect undisclosed change. They do not detect a vendor's error, a
-  corrupted source, or a subtly wrong construction upstream of the project.
-- **A threat outside the six classes.** The vocabulary is closed by design, and
-  the cost of that choice is real: a novel failure mode will be classified as
-  non-blocking and recorded as backlog.
-- **A determined adversary.** Every mechanism assumes parties are trying to get
-  the right answer. A party willing to falsify an attestation, fabricate a
-  digest, or misreport its own exposure defeats all of it. QROS raises the cost
-  of error and self-deception, not of fraud.
-- **Errors no check was designed to catch.** The worked example makes this
-  concrete: four green checks, a confident result, and a defect that only
-  independent recomputation surfaced. Had nobody recomputed, nothing in the
-  system would have noticed.
-- **Overfitting as such.** Specific overfitting-adjacent behaviours become
-  visible and recorded — moving a threshold, reusing a burned sample, searching
-  after the question is answered. The general problem is not solved.
-- **Human judgement.** SESOI choice, whether a hypothesis is genuinely distinct,
-  how decisive a negative result is, whether a design can answer its claim: none
-  of these is mechanisable, and QROS does not pretend otherwise.
+- **Defective input data.** Identity checks detect undisclosed change, not a
+  vendor's error, a corrupted source, or a wrong upstream construction.
+- **A threat outside the vocabulary.** The closed list has a real cost: a novel
+  failure mode has no rule written for it.
+- **A determined adversary.** A party willing to falsify a decision entry,
+  fabricate a digest or misreport its exposure defeats all of it. QROS raises
+  the cost of error and self-deception, not of fraud.
+- **Errors no check was designed to catch.** In the worked example only
+  independent recomputation surfaced the defect; had nobody recomputed, nothing
+  would have noticed.
+- **Overfitting as such.** Moving a threshold, reusing a burned sample, and
+  searching after the answer become visible. The general problem is not solved.
+- **Human judgement.** The smallest effect of interest, whether a hypothesis is
+  genuinely distinct, how decisive a negative result is: resolvability makes
+  these explicit, but none is mechanisable.
 
-`QROS-PURPOSE-NO-CORRECTNESS-GUARANTEE` states the limit normatively. QROS makes
-no claim of suitability for any regulatory, fiduciary, or contractual obligation,
-and confers no certification: conformance is self-declared.
+`QROS-PURPOSE-NO-CORRECTNESS-GUARANTEE` states the limit normatively. QROS
+confers no certification and claims no regulatory or fiduciary suitability.
 
 ---
 
 ## Residual risks worth naming
 
-**The reviewer is the load-bearing element.** Most of the system's protective
-value comes from independent recomputation. A project that dispatches review as
-ceremony — a reviewer who reads and agrees rather than recomputes — keeps the
-paperwork and loses the protection, and no rule here can detect the difference
-from outside.
+**Reproduction is the load-bearing element.** A `DELEGATE` that reads and
+agrees rather than reproduces keeps the paperwork and loses the protection.
+Requiring a PASS to list what it reproduced makes that visible, not impossible.
+And reproduction shows only that numbers follow from bytes: a leaked or invalid
+construction reproduces perfectly, which is why validity checks run before the
+primary result is read.
 
-**Blindness depends on how the evidence surface is built.** The specification
-requires a separately constructed surface with enumerated contents. A surface
-assembled carelessly, or one whose "enumeration" is a directory that happens to
-contain more than intended, is not blind. The digest discipline exists to make
-that checkable, and it only works if the digests are actually recomputed.
+**A same-family `DELEGATE` and `BUILDER` share blind spots.** Separate
+sessions of one model family give CONTEXT and AUTHORSHIP independence, not
+MODEL_DIVERSITY (`QROS-ROLE-SAME-FAMILY-LIMIT`, `QROS-INDEP-FOUR-KINDS`). A
+misread method, a plausible but wrong construction, or a shared reasoning habit
+can pass both, since the `DELEGATE`'s `REASONED` judgement comes from the same
+distribution as the `BUILDER`'s. Reproduction and a sealed, computed verdict
+rule (`QROS-VERDICT-RULE-COMPUTED`) push most of that risk into the design —
+estimand, rule, validity checks — exactly where a same-family `DELEGATE` is
+least independent, above all where it contributed the design
+(`QROS-ROLE-SELF-CERTIFICATION`). QROS does not close this gap; the `OWNER` may
+bring in an external reviewer for a consequential verdict.
+
+**Messages carry authority imperfectly.** `QROS-GATE-NO-RELAY` keeps retained
+gates out of reach of relayed messages. Delegated decisions do travel as
+messages; recording them verbatim with their sender
+(`QROS-RECORD-DECISION-LOG-APPEND-ONLY`) makes a forged one auditable, not
+impossible.
+
+**Blindness depends on how the bundle is built.** A bundle assembled carelessly,
+or a "bundle" that is a directory holding more than intended, is not blind. The
+digests make that checkable only if the receiver actually recomputes them.
 
 **Self-declared conformance is self-declared.** Nothing verifies that a project
-claiming to follow QROS does. The publication-assurance rule
-(`QROS-CONFORMANCE-PUBLICATION-ASSURANCE`) is the one place the specification
-insists a claim be checkable rather than asserted, and it applies to disclosure,
-not to research quality.
+claiming QROS follows it (`QROS-CONFORMANCE-SELF-DECLARED`).
+`QROS-CONFORMANCE-PUBLICATION-ASSURANCE` is the one place a claim must be
+checkable rather than asserted, and it covers disclosure, not research quality.

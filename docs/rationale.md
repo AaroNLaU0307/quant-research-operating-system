@@ -1,8 +1,8 @@
 # Why QROS looks like this
 
-Explanatory. [SPEC.md](../SPEC.md) is the only normative source; where this
-document and the specification differ, the specification governs. Identifiers
-like `QROS-BLIND-IS-TRANSPORT` are pointers into it, not restatements of it.
+Explanatory. [SPEC.md](../SPEC.md) (v2.0.0) is the only normative source; where
+this document and the specification differ, the specification governs.
+Identifiers like `QROS-BLIND-ON-DEMAND` are pointers into it, not restatements.
 
 Every rule below exists because of a failure mode, not because it seemed
 principled. The failure modes are described generically; the illustrations are
@@ -22,11 +22,12 @@ the producer's framing, its inputs, and the questions it was told to ask. A
 different process is not a different perspective.
 
 **Leakage.** Information about an outcome reaching a party whose judgement is
-supposed to be independent of it. The obvious form is a reviewer being told the
-answer. The subtle form is a reviewer that could reach the answer and was merely
-asked not to. `QROS-BLIND-IS-TRANSPORT` treats blindness as a property of what
-is technically reachable, because an instruction constrains conduct and not
-information flow.
+supposed to be independent of it. The obvious form is a party being told the
+answer. The subtle form is a party that could reach the answer and was merely
+asked not to. `QROS-BLIND-REPO-NOT-BLIND` treats blindness as a property of what
+is technically reachable — a party that must stay blind receives a
+digest-pinned bundle, not repository access — because an instruction constrains
+conduct and not information flow.
 
 Everything else is downstream of those two.
 
@@ -37,158 +38,152 @@ Everything else is downstream of those two.
 ### Look-ahead leakage
 
 A feature computed from a window that includes the period it is supposed to
-predict. It is not a syntax error; the pipeline runs, the shapes match, the
-result improves. Shape-level checks — length, nullity, alignment, determinism —
-pass identically on a leaked and a correct implementation, because a leaked
-signal has the same shape as a correct one.
+predict. The pipeline runs and the result improves. Shape-level
+checks pass identically on a leaked and a correct implementation, and so does
+reproduction: a leaked signal reproduces perfectly, because reproducing a number
+shows only that it follows from the bytes.
 
-**Answer:** independent recomputation from the sealed definition
-(`QROS-REVIEW-MANDATORY-TRIGGERS`), by a party that has not seen the producer's
-implementation. The worked example demonstrates exactly this: four green checks
-and a confident number, and a different answer the moment someone computed it
-independently.
+**Answer:** the window rule is enforced in the runner's code, not stated in
+prose (`QROS-PREREG-ENFORCED-DATA-RULES`); each instrument carries a validity
+check that must pass before the primary result is read
+(`QROS-PREREG-VALIDITY-CHECKS`); and where the construction itself is in doubt,
+an independent recomputation from the sealed definition, isolated in a bundle
+that excludes the producer's implementation (`QROS-BLIND-ON-DEMAND`). The worked
+example shows the last: four green checks, a confident number, and a different
+answer once someone computed it independently.
 
-Also `QROS-CHECK-NON-VACUOUS`: a check that observes the property of interest,
-rather than a proxy that correlates with it. Where the property is a runtime
-behaviour, a check over static structure does not establish it.
+Also `QROS-CHECK-NON-VACUOUS`: check the property, not a correlated proxy.
 
 ### Silent overfitting
 
 Searching until something works, then reporting the winner as though it had been
 the only candidate.
 
-**Answer:** the preregistration fixes the number of planned comparisons and the
-project's trial-accounting method before anything is computed
-(`QROS-PREREG-CONTENT`, `QROS-AXIS-TRIAL-ACCOUNTING`). QROS deliberately
-prescribes no counting formula — it records the method the project declares,
-because the right adjustment depends on the design and a specification that
-hard-coded one would be wrong more often than helpful.
-
-And `QROS-COMPLETION-STOP-RULE`: once the preregistered question is answered,
-investigation of that question stops. Unbounded post-hoc search on an answered
-question is indistinguishable, in its effect on the evidence, from selecting a
-favourable result.
+**Answer:** the preregistration fixes planned comparisons and the project's
+trial-accounting method before anything is computed (`QROS-PREREG-CONTENT`,
+`QROS-AXIS-TRIAL-ACCOUNTING`); QROS prescribes no counting formula, because the
+right adjustment depends on the design. Discovery has no candidate-count target
+(`QROS-S0-DISCOVERY`), and once the question is answered, investigation stops
+(`QROS-COMPLETION-STOP-RULE`).
 
 ### Moving the threshold
 
 The result comes in at 0.12, the threshold was 0.15, and the threshold becomes
 0.10 — usually with a plausible reason.
 
-**Answer:** `QROS-PREREG-SEAL-BEFORE-EXPOSURE`. The contract is fixed and
-digested before any party involved sees the target metric, so a later change is
-detectable rather than deniable. Post-seal changes are classified
-(`QROS-CHANGE-LABELS`), and `QROS-CHANGE-FIX-NOT-METHODOLOGY` closes the gap a
-bug fix would otherwise open: a repair that alters the question, the rule, the
-threshold, the sample or the metric is a methodology change however small the
-edit and however genuine the defect that prompted it.
+**Answer:** `QROS-PREREG-SEAL-BEFORE-EXPOSURE` fixes and digests the contract
+before the outcome exists, so a later change is detectable rather than deniable.
+The contract includes the verdict rule itself (`QROS-PREREG-VERDICT-RULE`), so
+S4 computes rather than debates; nobody departs from it after an outcome is seen
+(`QROS-VERDICT-NO-DEPARTURE`). Post-seal changes are labelled
+(`QROS-CHANGE-LABELS`); a repair that alters the question, rule, threshold,
+sample or metric is not a fix (`QROS-CHANGE-FIX-NOT-METHODOLOGY`).
 
-### Unreachable safeguards
+### Unreachable safeguards and unanswerable designs
 
-A kill condition whose branch no attainable measurement can reach. It looks like
-protection and provides none.
-
-**Answer:** `QROS-PREREG-KILL-REACHABILITY` requires demonstrating, from inputs
-available in advance, that the branch can fire on realistic input — and
-`QROS-PREREG-RECHECK-AFTER-AMENDMENT` requires re-running that check after every
-amendment, because repairing one rule defect can introduce another and an
-amendment checked only where it was applied is not checked.
+A kill condition no attainable measurement can reach looks like protection and
+provides none (`QROS-PREREG-KILL-REACHABILITY`). A design whose sample cannot
+resolve the smallest effect of interest can only return `unresolved`, and
+spends a one-shot trial to learn nothing (`QROS-PREREG-RESOLVABILITY`). For a
+return-stream claim, precision is set by calendar span — t is the annualized
+Sharpe ratio times the square root of the years — so finer bars or more
+instruments do not help; a true Sharpe of 0.5 needs about sixteen years to reach
+t = 2. Both checks rerun after every amendment
+(`QROS-PREREG-RECHECK-AFTER-AMENDMENT`).
 
 ### Silent sample reuse
 
-A sample that has already been searched, fitted, or evaluated is used again as
-though fresh. Each reuse consumes selection freedom; nothing records it.
+A sample already searched or evaluated is reused as though fresh.
 
-**Answer:** `QROS-REUSE-DECLARE-BEFORE-USE` requires the declaration in advance,
-including what the work will **not** compute — because the scope of an
-examination determines how much freedom it consumes, and an unbounded
-examination is indistinguishable from an unlimited one.
-
-Two related rules exist because both are counter-intuitive.
-`QROS-REUSE-NEW-SEAL-NO-REFRESH`: sealing a new contract fixes what happens
-next; it does not undo what a sample has absorbed.
-`QROS-REUSE-NEGATIVE-CONSUMES`: work that produces a negative result consumes
-selection freedom exactly as favourable work does, and discloses what was
-tested, on which sample, under what design.
+**Answer:** `QROS-REUSE-DECLARE-BEFORE-USE`. `QROS-REUSE-NEW-SEAL-NO-REFRESH`: a
+new seal fixes what happens next; it does not undo what a sample has absorbed.
+`QROS-REUSE-NEGATIVE-CONSUMES`: a negative result consumes selection freedom
+exactly as a favourable one does. And `QROS-EXPOSURE-MONOTONIC`: exposure never
+regresses, and a missing record means `UNKNOWN`, never `NONE` — the tempting
+default is to assume nothing was seen, which is the assumption leakage exploits.
 
 ### Claim mistaken for evidence
 
-"The tests pass" and "I verified it" describing the same act.
+"The tests pass" and "I verified it" describing one act.
 
-**Answer:** `QROS-EVIDENCE-SEPARATION` names three distinct kinds of support —
-builder claim, mechanical evidence, independent verification — and forbids
-substituting one for another. A record must say which supports each claim.
-Related traps get their own rules because each is individually tempting:
-passing tests are evidence for the properties those tests assert and nothing
-else; a docstring agreeing with a claim is part of the artifact under
-examination, not a check on it; agreement between reviewers or model families is
-a review outcome and not replication; and a favourable verdict on code quality
-does not authorise research action.
+**Answer:** `QROS-EVIDENCE-SEPARATION` — builder claim, mechanical evidence and
+independent verification are not interchangeable, and model-written text is not
+evidence for what it states (`QROS-PURPOSE-MODEL-OUTPUT-NOT-EVIDENCE`). Every
+acceptance statement carries `REPRODUCED`, `REASONED` or `SELF-REPORTED`
+(`QROS-REVIEW-EVIDENCE-CLASSES`), and a PASS that reproduced nothing is not
+acceptance (`QROS-ACCEPT-REPRODUCTION-FIRST`).
 
 ### Governance that outgrows the research
 
-Every incident produces a guard. Every guard needs a test. Every test needs an
-index. Reviews open reviews. The process becomes the work.
+Every incident produces a guard; every guard needs a test; reviews open reviews.
+The process becomes the work. This is what systems of this kind usually die of:
 
-This is the failure mode most systems of this kind actually die of, and several
-rules exist solely against it:
+- `QROS-COST-BUDGET` — a control must reduce a concrete risk by more than it
+  costs, and is not added because another control failed.
+- `QROS-BLOCKER-ADMISSION` — a blocker needs a named threat and a concrete
+  failure path on the current or next stage; `QROS-COMPLETION-PROGRESSION` —
+  proceed with backlog outstanding.
+- `QROS-REVIEW-NOT-ROUTINE`, `QROS-COMPLETION-NO-AUTOMATIC-LOOPS` — no review as
+  reassurance, no repair-review-repair cycle.
+- `QROS-REVIEW-ROUND-BUDGET` — two substantive rounds per gate per lineage; a
+  further HOLD goes to the `OWNER`.
 
-- `QROS-BLOCKER-ADMISSION` — a concern is a blocker only with one threat class
-  and a concrete failure path on the current or next stage. "A cleaner design is
-  imaginable" is explicitly not admissible.
-- `QROS-COMPLETION-PROGRESSION` — if the question can be answered and no blocker
-  threatens the answer, proceed with backlog outstanding.
-- `QROS-COMPLETION-NO-AUTOMATIC-LOOPS` — review happens because a rule requires
-  it or the Owner asks, never as reassurance after ordinary validation.
-- `QROS-REVIEW-ROUND-BUDGET` and `QROS-REVIEW-ESCALATION-ON-EXHAUSTION` — a
-  finite budget per issue lineage, counted continuously across renames so an
-  issue cannot acquire fresh budget by being relabelled; then a human decides.
-- `QROS-REVIEW-NOT-ROUTINE` — review dispatched for maintenance and formatting
-  consumes the capacity reserved for consequential disagreement.
-- `QROS-LIFECYCLE-PROPORTIONALITY` — the full lifecycle is for preregistered
-  studies. Work that cannot produce a durable claim, expose a reserved sample,
-  or cause an unsafe action needs no stage beyond ordinary engineering.
+### Transport failure, reopening, and stale state
 
-### Transport failure read as implementation failure
+A review that never validly happened — digests that do not recompute, a crashed
+tool — establishes nothing about the work and consumes no review round
+(`QROS-BLOCKER-TRANSPORT-NOT-IMPLEMENTATION`). A closed issue restated more
+forcefully stays closed; reopening needs new evidence
+(`QROS-BLOCKER-CLOSED-STAYS-CLOSED`).
 
-A review that never validly happened — a mismatched digest, an insufficient
-evidence surface, an ineligible reviewer — recorded as a finding against the
-work.
-
-**Answer:** `QROS-BLOCKER-TRANSPORT-NOT-IMPLEMENTATION`. Such a failure leaves
-the gate unsatisfied and establishes nothing about the work. It consumes no
-review round, and it is not a defect to be repaired in the code. Conflating the
-two produces two errors at once: it records defects that were never
-demonstrated, and it burns review budget on failures no repair to the work could
-fix.
-
-### Reopening settled questions
-
-A closed issue returns because someone restates it more forcefully.
-
-**Answer:** `QROS-BLOCKER-CLOSED-STAYS-CLOSED`. Reopening requires new, concrete
-evidence of a failure on the current path in one threat class. Not: a better
-approach has become apparent, a stronger safeguard is conceivable, another
-reviewer would add reassurance.
+The quieter failure is a record that drifts: a status copied into three places,
+one updated. Current state is one screen, rewritten at checkpoints
+(`QROS-STATE-CURRENT-ARTIFACT`); history is an append-only log
+(`QROS-RECORD-DECISION-LOG-APPEND-ONLY`); derived facts point to their source
+(`QROS-RECORD-DERIVED-NOT-COPIED`). Version 1 also asked the current-state page
+to be outcome-clean so a blind party could read it. That promise could not be
+kept — commit subjects and logs carry outcomes too — so version 2 withdraws it
+(`QROS-STATE-NOT-BLIND`) and gives blind parties a bundle instead.
 
 ---
 
-## Two design choices worth explaining
+## Design choices worth explaining
 
-**Why the Owner must be human.** `QROS-ROLE-OWNER` reserves a closed list of
-consequential actions — real-data execution, reveal, disposition, methodology
-change, public release, destructive mutation — and requires a human to authorise
-each. Not because agents are untrustworthy, but because these are the decisions
-whose cost is borne outside the system, and accountability for them cannot be
-delegated to a party that cannot hold it. `QROS-OWNER-AUDIT-NOT-EXECUTION`
-closes the obvious route around it: producing a recommendation, however well
-supported, does not authorise acting on it.
+**Why the Owner is human, and only some gates are retained.** Spending,
+live capital, credentials, public release and destructive mutation
+(`QROS-GATE-OWNER-RETAINED`) carry costs borne outside the system that no later
+record can undo; accountability for them cannot rest with a party that cannot
+hold it. Research-internal decisions — seal, run, reveal, verdict, methodology
+change — are delegable (`QROS-GATE-DELEGATED`) because seals, sealed rules and
+write-ahead grants protect them mechanically; the `OWNER` may take any back.
+`QROS-GATE-NO-RELAY`: a relayed message never grants a retained gate, because a
+relay is exactly where authority gets forged. And a recommendation does not
+authorise acting on it (`QROS-OWNER-AUDIT-NOT-EXECUTION`).
 
-**Why one authorisation covers one execution.** Consequential execution against
-real data is authorised per execution, bound to that execution's identity, and
-re-verified immediately before it starts. This is more Owner effort than a
-standing permission would be. It is deliberate: a standing authorisation drifts
-from what was actually approved as code and data move underneath it, and the
-drift is invisible precisely when it matters.
+**Why the Delegate may be an AI but never builds.** A `DELEGATE` that built
+would certify itself, and a second writer corrupts records. It sends decisions,
+which the `BUILDER` records verbatim, and reproduces from the repository at a
+revision, never from a message (`QROS-RECORD-CHECKPOINT`).
+
+**Why acceptance starts with reproduction.** Version 1 certified through
+reviewer dispatch. Judgement is the expensive, fallible part, and ceremony can
+mimic it; reproduction either happens or does not. When `DELEGATE` and
+`BUILDER` share a model family, separate sessions separate context and
+authorship, not perspective (`QROS-ROLE-SAME-FAMILY-LIMIT`); reproduction and a
+sealed, computed verdict rule (`QROS-VERDICT-RULE-COMPUTED`) shrink the surface
+where shared blind spots act. They do not remove it.
+
+**Why one verdict vocabulary.** A research status plus a disposition
+(`QROS-VERDICT-VOCABULARY`), nothing else: a second scale invites a result to be
+described in whichever scale flatters it.
+
+**Why a grant names what it covers.** A grant is recorded before the run, names
+the code and data identities it covers, and says whether it is one-shot or
+standing (`QROS-RUN-SEAL-NOT-AUTHORIZATION`). A standing grant lets the
+`BUILDER` work autonomously without drifting silently: the mechanical run gate
+checks those identities and fails closed (`QROS-RUN-GATE-MECHANICAL`,
+`QROS-RUN-FAIL-CLOSED`). A one-shot grant is consumed write-ahead
+(`QROS-RUN-ONE-SHOT-WRITE-AHEAD`), or crash-and-retry becomes a way to peek.
 
 ---
 
@@ -196,8 +191,8 @@ drift is invisible precisely when it matters.
 
 None of it makes a conforming project's conclusions correct. A wrong prior,
 defective input data, an error no check was designed to catch, or a threat
-outside the vocabulary will pass through all of it. The claim is narrower and
-worth stating plainly: a specific, enumerated set of process failures becomes
-more expensive to commit and harder to commit silently.
+outside the vocabulary will pass through all of it. The claim is narrower: a
+specific, enumerated set of process failures becomes more expensive to commit
+and harder to commit silently.
 
 See [threat-model.md](threat-model.md) for where the boundary sits.

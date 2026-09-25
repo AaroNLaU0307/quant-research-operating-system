@@ -1,5 +1,13 @@
 # A worked QROS study, end to end
 
+> **QROS 1.0 example — read [`V1_ERA.md`](V1_ERA.md) first.** This study was
+> produced under QROS 1.0 and is kept as written. Its dispatch, brief and
+> attestation files, and the verdict `PASS_WITH_BACKLOG`, show machinery that
+> QROS 2.0.0 retired. Under v2 the same study would be accepted by the
+> `DELEGATE`, reproduction-first, against a sealed verdict rule. Its research
+> content and `verify.py` still illustrate sealing, evidence separation and
+> change labels.
+
 `STUDY_SYNTHETIC_001` · `PROJECT_SYNTHETIC_001`
 
 Everything here is fabricated. The data is generated from a seed, the research

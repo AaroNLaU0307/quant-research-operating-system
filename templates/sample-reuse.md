@@ -24,7 +24,7 @@ document cites it rather than restating it.
 declaration_id: REUSE_SYNTHETIC_001
 project_id: PROJECT_SYNTHETIC_001
 work_item: WORKITEM_SYNTHETIC_002
-declared_by: ROLE_BINDING_MAIN_AGENT
+declared_by: ROLE_BINDING_BUILDER
 declared_at: "2000-01-01T00:00:00Z"
 declared_before_use: true          # false ⇒ this is a retrospective record, and
                                    # the obligation was not met; say so plainly
@@ -36,6 +36,9 @@ sample:
   definition: >
     What this sample is, in terms sufficient to tell it apart from a
     neighbouring one: coverage, period, inclusion rules.
+  reuse_class: reused-dependent    # the project's declared class, or UNKNOWN
+  evidence_ceiling: supported      # highest status any claim on this sample may reach
+                                   # (QROS-REUSE-DECLARE-BEFORE-USE)
 
 # --- what it has already absorbed ---------------------------------------
 # QROS-REUSE-EXPOSURE-VS-TRIALS: these two records answer different questions
@@ -49,7 +52,7 @@ prior_uses:
                                    # (QROS-REUSE-NEGATIVE-CONSUMES)
 
 prior_exposure:
-  - party: ROLE_BINDING_MAIN_AGENT
+  - party: ROLE_BINDING_BUILDER
     target: SYNTH_METRIC_A
     level: TARGET_METRIC           # NONE | AGGREGATE | TARGET_METRIC | UNKNOWN
     as_of: "2000-01-01T00:00:00Z"
@@ -90,7 +93,7 @@ justification: >
 
 # --- consequences, recorded in advance -----------------------------------
 resulting_exposure:
-  - party: ROLE_BINDING_MAIN_AGENT
+  - party: ROLE_BINDING_BUILDER
     target: SYNTH_METRIC_A
     level: TARGET_METRIC
     note: >
@@ -104,8 +107,9 @@ resulting_trial_accounting:
   accounting_reference: ACCOUNTING_SYNTHETIC_001
 
 # --- authority ------------------------------------------------------------
-# Required where the reuse is itself gated — e.g. it needs data access or an
-# execution authorisation (QROS-OWNER-GATE-LIST).
+# Required where the reuse is itself gated — e.g. it needs data access beyond
+# a grant or a run authorization (QROS-GATE-DELEGATED), or touches a retained
+# gate (QROS-GATE-OWNER-RETAINED).
 authority:
   required: false
   # decision_ref: <decision-log entry authorising this, when required:true>
@@ -115,7 +119,7 @@ authority:
 
 ## Notes on completing this
 
-| Field | What a reviewer will look for |
+| Field | What acceptance will check |
 |---|---|
 | `declared_before_use` | `true`, with `declared_at` preceding the work |
 | `prior_uses` | every prior use, including those that produced nothing publishable |

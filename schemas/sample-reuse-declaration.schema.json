@@ -30,11 +30,19 @@
     "sample": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["identity", "definition"],
+      "required": ["identity", "definition", "reuse_class", "evidence_ceiling"],
       "properties": {
         "identity": { "$ref": "common.schema.json#/$defs/Identifier" },
         "class": { "type": "string", "minLength": 1 },
-        "definition": { "type": "string", "minLength": 1 }
+        "definition": { "type": "string", "minLength": 1 },
+        "reuse_class": {
+          "description": "The project's declared reuse class for this sample, or UNKNOWN (QROS-REUSE-DECLARE-BEFORE-USE).",
+          "type": "string", "minLength": 1
+        },
+        "evidence_ceiling": {
+          "description": "The highest research status any claim on this sample may reach, given its reuse class.",
+          "$ref": "common.schema.json#/$defs/ResearchStatus"
+        }
       }
     },
 

@@ -2,457 +2,314 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "decision-log-entry.schema.json",
   "title": "QROS decision-log entry",
-  "description": "Validates a single entry of templates/decision-log.md. Enforces the three entry kinds of QROS-RECORD-DECISION-LOG-APPEND-ONLY, the gate vocabulary of QROS-OWNER-GATE-LIST, the verdict vocabulary of QROS-REVIEW-VERDICTS, and the per-execution authorisation semantics of QROS-OWNER-REAL-RUN. A review that never became valid returns no verdict and therefore produces no entry of this kind at all, which is why no invalid-review branch exists here.",
+  "description": "Validates a single entry of templates/decision-log.md (QROS 2.0.0). Enforces QROS-RECORD-DECISION-LOG-APPEND-ONLY (id, UTC, decider, decision, evidence pointer; corrections cite the entry they correct; a binding message is recorded verbatim with its sender), QROS-VERDICT-RECORD (decider, what was reproduced, whether an external review was called), QROS-VERDICT-VOCABULARY, QROS-GATE-OWNER-RETAINED, QROS-GATE-DELEGATED, QROS-GATE-NO-RELAY, QROS-GATE-NO-SELF-AUTHORIZATION, QROS-RUN-SEAL-NOT-AUTHORIZATION, QROS-RUN-ONE-SHOT-WRITE-AHEAD and QROS-CHANGE-CLASSIFY-BEFORE-APPLY. Append-only order is a property of the log file, not of one entry, and is checked outside this schema.",
+
   "type": "object",
-  "required": [
-    "entry_id",
-    "kind",
-    "recorded_at"
-  ],
-  "properties": {
-    "entry_id": {
-      "$ref": "common.schema.json#/$defs/Identifier"
-    },
-    "kind": {
-      "type": "string",
-      "enum": [
-        "OWNER_DECISION",
-        "REVIEW_VERDICT",
-        "CORRECTION"
-      ]
-    },
-    "recorded_at": {
-      "$ref": "common.schema.json#/$defs/Timestamp"
+  "additionalProperties": false,
+  "required": ["id", "utc", "decider", "type", "decision", "evidence"],
+
+  "$defs": {
+    "GateHolder": {
+      "description": "Only the OWNER or the DELEGATE decides a gate; the BUILDER never authorizes its own run, reveal or verdict (QROS-GATE-NO-SELF-AUTHORIZATION).",
+      "properties": { "decider": { "properties": { "role": { "enum": ["OWNER", "DELEGATE"] } } } }
     }
   },
-  "oneOf": [
-    {
-      "title": "OWNER_DECISION",
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "entry_id",
-        "kind",
-        "recorded_at",
-        "decided_by",
-        "gate",
-        "decision",
-        "subject"
-      ],
-      "properties": {
-        "entry_id": {
-          "$ref": "common.schema.json#/$defs/Identifier"
-        },
-        "kind": {
-          "const": "OWNER_DECISION"
-        },
-        "recorded_at": {
-          "$ref": "common.schema.json#/$defs/Timestamp"
-        },
-        "decided_by": {
-          "const": "OWNER"
-        },
-        "gate": {
-          "$ref": "common.schema.json#/$defs/OwnerGate"
-        },
-        "decision": {
-          "type": "string",
-          "enum": [
-            "AUTHORIZED",
-            "DECLINED",
-            "DEFERRED",
-            "REVOKED"
-          ]
-        },
-        "subject": {
-          "type": "string",
-          "minLength": 1
-        },
-        "basis": {
-          "type": "string"
-        },
-        "reveal": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": [
-            "reveal_target",
-            "reveal_scope"
-          ],
-          "properties": {
-            "reveal_target": {
-              "type": "string",
-              "minLength": 1
-            },
-            "reveal_scope": {
-              "type": "string",
-              "minLength": 1
-            },
-            "result_record": {
-              "type": "string"
-            }
-          }
-        },
-        "disposition": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": [
-            "disposition",
-            "subject_ref"
-          ],
-          "properties": {
-            "disposition": {
-              "type": "string",
-              "minLength": 1
-            },
-            "subject_ref": {
-              "type": "string",
-              "minLength": 1
-            },
-            "evidence_refs": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            }
-          }
-        },
-        "methodology_change": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": [
-            "change_label",
-            "what_changed"
-          ],
-          "properties": {
-            "change_label": {
-              "$ref": "common.schema.json#/$defs/ChangeLabel"
-            },
-            "what_changed": {
-              "type": "string",
-              "minLength": 1
-            },
-            "prior_seal_ref": {
-              "type": "string"
-            },
-            "new_seal_ref": {
-              "type": "string"
-            },
-            "prior_evidence_disposition": {
-              "type": "string"
-            }
-          }
-        },
-        "public_release": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": [
-            "release_scope"
-          ],
-          "properties": {
-            "release_scope": {
-              "type": "string",
-              "minLength": 1
-            },
-            "assurance_ref": {
-              "type": "string"
-            }
-          }
-        },
-        "destructive_mutation": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": [
-            "mutation_type",
-            "target",
-            "irreversible"
-          ],
-          "properties": {
-            "mutation_type": {
-              "type": "string",
-              "minLength": 1
-            },
-            "target": {
-              "type": "string",
-              "minLength": 1
-            },
-            "irreversible": {
-              "type": "boolean"
-            },
-            "recovery_path": {
-              "type": "string"
-            }
-          }
-        },
-        "execution": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": [
-            "execution_ref",
-            "purpose",
-            "data_identity",
-            "code_identity"
-          ],
-          "properties": {
-            "execution_ref": {
-              "$ref": "common.schema.json#/$defs/Identifier"
-            },
-            "data_identity": {
-              "type": "string",
-              "minLength": 1
-            },
-            "code_identity": {
-              "type": "string",
-              "minLength": 1
-            },
-            "purpose": {
-              "type": "string",
-              "minLength": 1
-            },
-            "identity_verified_before_start": {
-              "type": "boolean"
-            }
-          },
-          "description": "The execution this authorisation covers. One authorisation covers exactly one execution (QROS-OWNER-REAL-RUN); a further execution requires a further authorisation. The recorded identities are re-verified before the execution begins."
-        }
-      },
-      "allOf": [
-        {
-          "$comment": "QROS-OWNER-REAL-RUN: an authorised real-data execution names the single execution it authorises. There is no envelope, class, or standing authorisation covering future runs.",
-          "if": {
-            "properties": {
-              "gate": {
-                "const": "QROS-OWNER-REAL-RUN"
-              },
-              "decision": {
-                "const": "AUTHORIZED"
-              }
-            },
-            "required": [
-              "gate",
-              "decision"
-            ]
-          },
-          "then": {
-            "required": [
-              "execution"
-            ]
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "gate": {
-                "const": "QROS-OWNER-REVEAL"
-              },
-              "decision": {
-                "const": "AUTHORIZED"
-              }
-            },
-            "required": [
-              "gate",
-              "decision"
-            ]
-          },
-          "then": {
-            "required": [
-              "reveal"
-            ]
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "gate": {
-                "const": "QROS-OWNER-METHODOLOGY-CHANGE"
-              },
-              "decision": {
-                "const": "AUTHORIZED"
-              }
-            },
-            "required": [
-              "gate",
-              "decision"
-            ]
-          },
-          "then": {
-            "required": [
-              "methodology_change"
-            ]
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "gate": {
-                "const": "QROS-OWNER-DESTRUCTIVE-MUTATION"
-              },
-              "decision": {
-                "const": "AUTHORIZED"
-              }
-            },
-            "required": [
-              "gate",
-              "decision"
-            ]
-          },
-          "then": {
-            "required": [
-              "destructive_mutation"
-            ]
-          }
-        }
+
+  "properties": {
+    "id": { "$ref": "common.schema.json#/$defs/Identifier" },
+    "utc": {
+      "description": "When the event happened, written when it happens and never reconstructed from a later state.",
+      "$ref": "common.schema.json#/$defs/Timestamp"
+    },
+    "decider": { "$ref": "common.schema.json#/$defs/Party" },
+    "type": {
+      "type": "string",
+      "enum": [
+        "grant",
+        "consumption",
+        "seal",
+        "reveal",
+        "verdict",
+        "disposition",
+        "methodology_change",
+        "delegate_decision",
+        "owner_decision",
+        "correction"
       ]
     },
-    {
-      "title": "REVIEW_VERDICT",
-      "$comment": "Exists only where a VALID review returned one of the three verdicts. There is no fourth value and no invalid-review variant.",
+    "decision": {
+      "description": "What was decided, in one or two sentences.",
+      "type": "string",
+      "minLength": 1
+    },
+    "verbatim": {
+      "description": "A binding message, recorded verbatim with its sender before it is acted on.",
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "entry_id",
-        "kind",
-        "recorded_at",
-        "review_id",
-        "round",
-        "reviewer_role",
-        "verdict",
-        "attestation_ref",
-        "round_consumed"
-      ],
+      "required": ["text", "sender", "received_utc", "channel"],
       "properties": {
-        "entry_id": {
-          "$ref": "common.schema.json#/$defs/Identifier"
-        },
-        "kind": {
-          "const": "REVIEW_VERDICT"
-        },
-        "recorded_at": {
-          "$ref": "common.schema.json#/$defs/Timestamp"
-        },
-        "review_id": {
-          "$ref": "common.schema.json#/$defs/Identifier"
-        },
-        "issue_lineage": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "round": {
-          "type": "integer",
-          "minimum": 1
-        },
-        "round_budget": {
-          "type": "integer",
-          "minimum": 1
-        },
-        "reviewer_role": {
+        "text": { "type": "string", "minLength": 1 },
+        "sender": { "$ref": "common.schema.json#/$defs/Party" },
+        "received_utc": { "$ref": "common.schema.json#/$defs/Timestamp" },
+        "channel": {
+          "description": "DIRECT: received from the sender. RELAYED: passed on by another party, which is never sufficient for a retained gate (QROS-GATE-NO-RELAY).",
           "type": "string",
-          "enum": [
-            "INDEPENDENT_REVIEWER",
-            "ARCHITECTURE_REVIEWER"
-          ]
-        },
-        "reviewer_id": {
-          "$ref": "common.schema.json#/$defs/RoleBinding"
-        },
-        "verdict": {
-          "$ref": "common.schema.json#/$defs/ReviewVerdict"
-        },
-        "attestation_ref": {
-          "$ref": "common.schema.json#/$defs/Identifier"
-        },
-        "attestation_digest": {
-          "$ref": "common.schema.json#/$defs/Digest"
-        },
-        "brief_digest": {
-          "$ref": "common.schema.json#/$defs/Digest"
-        },
-        "blindness_required": {
-          "$ref": "common.schema.json#/$defs/BlindnessLevel"
-        },
-        "blindness_achieved": {
-          "$ref": "common.schema.json#/$defs/BlindnessLevel"
-        },
-        "blocking_finding_ids": {
-          "type": "array",
-          "items": {
-            "type": "string"
+          "enum": ["DIRECT", "RELAYED"]
+        }
+      }
+    },
+    "evidence": {
+      "description": "Pointer to the evidence: a path, a commit, a persisted message, or UNKNOWN where the event cannot be established.",
+      "type": "string",
+      "minLength": 1
+    },
+    "gate": {
+      "anyOf": [
+        { "$ref": "common.schema.json#/$defs/OwnerGate" },
+        { "$ref": "common.schema.json#/$defs/DelegatedGate" }
+      ]
+    },
+
+    "grant": {
+      "description": "QROS-RUN-SEAL-NOT-AUTHORIZATION: recorded before the run, names the identities it covers, and states whether it is one-shot or standing. A grant lives in exactly one place: this entry.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "covers", "scope"],
+      "properties": {
+        "mode": { "type": "string", "enum": ["ONE_SHOT", "STANDING"] },
+        "scope": { "type": "string", "minLength": 1 },
+        "covers": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["code", "data"],
+          "properties": {
+            "preregistration": { "type": "string", "minLength": 1 },
+            "seal": { "type": "string", "minLength": 1 },
+            "code": { "type": "string", "minLength": 1 },
+            "data": { "type": "string", "minLength": 1 },
+            "environment": { "type": "string", "minLength": 1 }
           }
         },
-        "backlog_rows_opened": {
+        "grantee": { "$ref": "common.schema.json#/$defs/Party" },
+        "run_gate_evidence": { "type": "string", "minLength": 1 },
+        "revokes_entry": { "$ref": "common.schema.json#/$defs/Identifier" }
+      }
+    },
+
+    "consumption": {
+      "description": "QROS-RUN-ONE-SHOT-WRITE-AHEAD: written by the runner before it touches outcomes. A grant with any evidence of use is consumed, including a partial, crashed or indeterminate run. Nothing reverses consumption.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["grant_entry", "run_ref", "written_before_outcome_access"],
+      "properties": {
+        "grant_entry": { "$ref": "common.schema.json#/$defs/Identifier" },
+        "run_ref": { "$ref": "common.schema.json#/$defs/Identifier" },
+        "written_before_outcome_access": { "const": true },
+        "run_state": { "type": "string", "enum": ["STARTED", "COMPLETED", "CRASHED", "INDETERMINATE"] }
+      }
+    },
+
+    "seal": {
+      "description": "QROS-PREREG-SEAL-BEFORE-EXPOSURE and QROS-PREREG-LINEAGE.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["prereg_ref", "manifest_ref", "manifest_digest", "parent_seal"],
+      "properties": {
+        "prereg_ref": { "type": "string", "minLength": 1 },
+        "manifest_ref": { "type": "string", "minLength": 1 },
+        "manifest_digest": { "$ref": "common.schema.json#/$defs/Digest" },
+        "parent_seal": { "type": "string", "minLength": 1 },
+        "resolvability_ref": { "type": "string", "minLength": 1 }
+      }
+    },
+
+    "reveal": {
+      "description": "The revealed content itself is never written into this log; the exposure it causes is recorded (QROS-EXPOSURE-MONOTONIC).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reveal_to", "reveal_scope", "result_record"],
+      "properties": {
+        "reveal_to": { "type": "array", "minItems": 1, "items": { "$ref": "common.schema.json#/$defs/RoleBinding" } },
+        "reveal_scope": { "type": "string", "minLength": 1 },
+        "result_record": { "type": "string", "minLength": 1 },
+        "validity_checks_passed_ref": { "type": "string", "minLength": 1 }
+      }
+    },
+
+    "verdict": {
+      "description": "QROS-VERDICT-RECORD and QROS-VERDICT-RULE-COMPUTED. The decider is the entry's `decider`; `reproduced` lists what the decider reproduced (QROS-ACCEPT-REPRODUCTION-FIRST); `external_review` states whether an external review was called (QROS-ROLE-SAME-FAMILY-LIMIT).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["subject_ref", "research_status", "disposition", "verdict_rule_ref", "rule_applied", "reproduced", "external_review"],
+      "properties": {
+        "subject_ref": { "type": "string", "minLength": 1 },
+        "research_status": { "$ref": "common.schema.json#/$defs/ResearchStatus" },
+        "disposition": { "$ref": "common.schema.json#/$defs/Disposition" },
+        "verdict_rule_ref": { "type": "string", "minLength": 1 },
+        "rule_applied": {
+          "description": "The order of the sealed verdict-rule row that fired, or NOT_APPLICABLE when the rule could not be applied (then research_status is unresolved and unresolved_reason is required).",
+          "oneOf": [
+            { "type": "integer", "minimum": 1 },
+            { "const": "NOT_APPLICABLE" }
+          ]
+        },
+        "unresolved_reason": { "type": "string", "minLength": 1 },
+        "reproduced": {
           "type": "array",
+          "minItems": 1,
           "items": {
-            "type": "string"
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["what", "evidence_class"],
+            "properties": {
+              "what": { "type": "string", "minLength": 1 },
+              "evidence_class": { "$ref": "common.schema.json#/$defs/EvidenceClass" },
+              "evidence_ref": { "type": "string", "minLength": 1 }
+            }
+          },
+          "contains": {
+            "properties": { "evidence_class": { "const": "REPRODUCED" } },
+            "required": ["evidence_class"]
           }
         },
-        "round_consumed": {
-          "type": "string",
-          "enum": [
-            "YES",
-            "NO"
-          ]
+        "external_review": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["called"],
+          "properties": {
+            "called": { "type": "boolean" },
+            "reviewer": { "$ref": "common.schema.json#/$defs/RoleBinding" },
+            "outcome": { "$ref": "common.schema.json#/$defs/ReviewVerdict" },
+            "record_ref": {
+              "description": "Where the review was persisted when received (QROS-REVIEW-PERSISTED).",
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "if": { "properties": { "called": { "const": true } }, "required": ["called"] },
+          "then": { "required": ["reviewer", "record_ref"] }
         }
       },
-      "if": {
-        "properties": {
-          "verdict": {
-            "const": "HOLD"
-          }
-        },
-        "required": [
-          "verdict"
-        ]
-      },
+      "if": { "properties": { "rule_applied": { "const": "NOT_APPLICABLE" } }, "required": ["rule_applied"] },
       "then": {
-        "required": [
-          "blocking_finding_ids"
-        ],
-        "properties": {
-          "blocking_finding_ids": {
-            "minItems": 1
+        "required": ["unresolved_reason"],
+        "properties": { "research_status": { "const": "unresolved" } }
+      }
+    },
+
+    "disposition": {
+      "description": "A disposition outside a run-to-verdict (QROS-VERDICT-VOCABULARY), e.g. a candidate closed or parked before any outcome.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["subject_ref", "disposition", "reason"],
+      "properties": {
+        "subject_ref": { "type": "string", "minLength": 1 },
+        "disposition": { "$ref": "common.schema.json#/$defs/Disposition" },
+        "research_status": { "$ref": "common.schema.json#/$defs/ResearchStatus" },
+        "reason": { "type": "string", "minLength": 1 }
+      }
+    },
+
+    "change": {
+      "description": "QROS-CHANGE-LABELS, recorded with its evidence before the change is applied (QROS-CHANGE-CLASSIFY-BEFORE-APPLY). Where the change repairs a confirmed defect that affects research, `defect_impact` is required (QROS-CHANGE-DEFECT-IMPACT).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["change_label", "what_changed", "recorded_before_apply"],
+      "properties": {
+        "change_label": { "$ref": "common.schema.json#/$defs/ChangeLabel" },
+        "what_changed": { "type": "string", "minLength": 1 },
+        "sealed_clause_ref": { "type": "string", "minLength": 1 },
+        "recorded_before_apply": { "const": true },
+        "prior_seal_ref": { "type": "string" },
+        "new_seal_ref": { "type": "string" },
+        "prior_evidence_disposition": { "type": "string" },
+        "defect_impact": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["defect", "affected", "unaffected", "unknown", "recomputation", "evidence_restriction", "not_recomputed"],
+          "properties": {
+            "defect": { "type": "string", "minLength": 1 },
+            "affected": { "type": "string", "minLength": 1 },
+            "unaffected": { "type": "string", "minLength": 1 },
+            "unknown": { "type": "string", "minLength": 1 },
+            "recomputation": { "type": "string", "minLength": 1 },
+            "evidence_restriction": { "type": "string", "minLength": 1 },
+            "not_recomputed": { "type": "string", "minLength": 1 }
           }
         }
       }
     },
+
+    "corrects_entry": { "$ref": "common.schema.json#/$defs/Identifier" },
+    "what_was_wrong": { "type": "string", "minLength": 1 },
+    "correct_record": { "type": "string", "minLength": 1 }
+  },
+
+  "allOf": [
     {
-      "title": "CORRECTION",
-      "$comment": "Corrects the record, never the history. It does not reverse a decision or change a verdict.",
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "entry_id",
-        "kind",
-        "recorded_at",
-        "corrects_entry",
-        "what_was_wrong",
-        "correct_record"
-      ],
-      "properties": {
-        "entry_id": {
-          "$ref": "common.schema.json#/$defs/Identifier"
-        },
-        "kind": {
-          "const": "CORRECTION"
-        },
-        "recorded_at": {
-          "$ref": "common.schema.json#/$defs/Timestamp"
-        },
-        "corrects_entry": {
-          "$ref": "common.schema.json#/$defs/Identifier"
-        },
-        "recorded_by": {
-          "$ref": "common.schema.json#/$defs/RoleBinding"
-        },
-        "what_was_wrong": {
-          "type": "string",
-          "minLength": 1
-        },
-        "correct_record": {
-          "type": "string",
-          "minLength": 1
+      "$comment": "A decision received as a message is recorded verbatim with its sender; every OWNER decision reaches the record that way, because the BUILDER is the only writer of the records.",
+      "if": { "properties": { "decider": { "properties": { "role": { "const": "OWNER" } } } }, "required": ["decider"] },
+      "then": { "required": ["verbatim"] }
+    },
+    {
+      "$comment": "QROS-GATE-NO-RELAY: a retained gate is exercised or granted by the OWNER directly.",
+      "if": { "properties": { "gate": { "$ref": "common.schema.json#/$defs/OwnerGate" } }, "required": ["gate"] },
+      "then": {
+        "required": ["verbatim"],
+        "properties": {
+          "decider": { "properties": { "role": { "const": "OWNER" } } },
+          "verbatim": { "properties": { "channel": { "const": "DIRECT" }, "sender": { "properties": { "role": { "const": "OWNER" } } } } }
         }
       }
+    },
+    {
+      "if": { "properties": { "type": { "const": "grant" } }, "required": ["type"] },
+      "then": { "required": ["grant", "gate"], "$ref": "#/$defs/GateHolder" }
+    },
+    {
+      "if": { "properties": { "type": { "const": "consumption" } }, "required": ["type"] },
+      "then": { "required": ["consumption"] }
+    },
+    {
+      "if": { "properties": { "type": { "const": "seal" } }, "required": ["type"] },
+      "then": { "required": ["seal"], "$ref": "#/$defs/GateHolder" }
+    },
+    {
+      "if": { "properties": { "type": { "const": "reveal" } }, "required": ["type"] },
+      "then": { "required": ["reveal"], "$ref": "#/$defs/GateHolder" }
+    },
+    {
+      "if": { "properties": { "type": { "const": "verdict" } }, "required": ["type"] },
+      "then": { "required": ["verdict"], "$ref": "#/$defs/GateHolder" }
+    },
+    {
+      "if": { "properties": { "type": { "const": "disposition" } }, "required": ["type"] },
+      "then": { "required": ["disposition"] }
+    },
+    {
+      "$comment": "Every post-seal change label is recorded under this type. IMPLEMENTATION_FIX and DATA_FIX are the BUILDER's; the other three labels are decided by the DELEGATE or OWNER.",
+      "if": { "properties": { "type": { "const": "methodology_change" } }, "required": ["type"] },
+      "then": { "required": ["change"] }
+    },
+    {
+      "if": {
+        "properties": { "change": { "properties": { "change_label": { "enum": ["ANALYSIS_EXTENSION", "METHODOLOGY_CHANGE", "HYPOTHESIS_CHANGE"] } }, "required": ["change_label"] } },
+        "required": ["change"]
+      },
+      "then": { "$ref": "#/$defs/GateHolder" }
+    },
+    {
+      "if": { "properties": { "type": { "const": "delegate_decision" } }, "required": ["type"] },
+      "then": { "properties": { "decider": { "properties": { "role": { "const": "DELEGATE" } } } } }
+    },
+    {
+      "if": { "properties": { "type": { "const": "owner_decision" } }, "required": ["type"] },
+      "then": { "properties": { "decider": { "properties": { "role": { "const": "OWNER" } } } } }
+    },
+    {
+      "$comment": "A correction is a new entry that cites the old one; the corrected entry stays exactly as written.",
+      "if": { "properties": { "type": { "const": "correction" } }, "required": ["type"] },
+      "then": { "required": ["corrects_entry", "what_was_wrong", "correct_record"] }
     }
   ]
 }

@@ -1,89 +1,115 @@
 # QROS — Quantitative Research Operating System
 
-QROS is an agent-assisted research operating system for quantitative strategy
-development. It separates strategy construction, mechanical validation,
-independent review, data exposure, and Owner authorization, so that
-AI-assisted research stays reproducible and resistant to leakage, silent
-overfitting, and self-certification.
+QROS is an operating model for quantitative strategy research done with substantial
+help from AI agents. It keeps apart the parties who build, accept and authorize work,
+and it records which outcomes each party has seen. The aim is research that stays
+reproducible and resistant to leakage, silent overfitting and self-certification.
 
-It is a **specification**, a set of **artifact templates**, **schemas** that
-enforce them, and one **fully synthetic worked example**. It is not a trading
-system.
+The repository holds:
+
+- a **specification**;
+- **artifact templates**;
+- **schemas** that enforce the templates;
+- one **fully synthetic worked example**.
+
+It is not a trading system.
+
+**Version 2.0.0.** Version 2 replaces v1's review-dispatch machinery with:
+
+- three roles;
+- acceptance by reproduction;
+- verdicts computed from a rule sealed in advance.
+
+The v1 artifacts live under [`retired/v1/`](retired/v1/). The mapping from every v1
+rule to its v2 successor is in [SPEC.md](SPEC.md), Appendix B.
 
 ---
 
 ## Why it exists
 
-An AI agent that produces a result and then attests to that result will confirm
-itself. A research pipeline that lets outcome information reach the party
-supposed to be checking it cannot detect its own errors. Both failures are
-quiet: the tests stay green, the write-up stays confident, and the mistake
-propagates.
+An AI agent that produces a result and then attests to it will confirm itself. A
+pipeline that lets outcome information reach the party meant to check it cannot detect
+its own errors. Both failures are quiet: the tests stay green, the write-up stays
+confident, and the mistake propagates.
 
-QROS is built around a small number of failure modes that recur in quantitative
-research — look-ahead leakage, silent overfitting, moving a threshold to meet a
-result, reusing an already-searched sample, treating a builder's claim as
-evidence, and governance that grows until it replaces the research. The rules
-exist to make each of those expensive rather than convenient.
+QROS targets failures that recur in quantitative research:
 
-The full reasoning is in [docs/rationale.md](docs/rationale.md). The limits —
-what QROS defends against and what it does not — are in
-[docs/threat-model.md](docs/threat-model.md).
+- look-ahead leakage;
+- moving a threshold to meet a result;
+- reusing an already-searched sample;
+- treating a builder's claim as evidence;
+- data rules that exist only in prose;
+- designs that can only ever return "unresolved";
+- governance that grows until it replaces the research.
 
-## Core workflow
+Each rule exists to make one of these expensive rather than convenient. The reasoning
+is in [docs/rationale.md](docs/rationale.md). What QROS does and does not defend against
+is in [docs/threat-model.md](docs/threat-model.md).
+
+## Roles
+
+| role | who | does |
+|---|---|---|
+| `OWNER` | a human | holds the retained gates: spending, live capital, credentials, public release, destructive mutation; may override any delegated decision |
+| `DELEGATE` | appointed by the Owner, optional; may be an AI agent in its own session | decides the delegated gates (seal, run authorization, reveal, verdict, scope and methodology changes); accepts work by reproduction; never builds |
+| `BUILDER` | one per project | designs, implements, tests, runs authorized runs, keeps the records; autonomous under a standing authorization; never authorizes its own run, reveal or verdict |
+
+A retained gate is never granted through a relayed message. Where a Delegate and a
+Builder share a model family, that is not model diversity. QROS relies on structure
+instead: reproduction-first acceptance and verdicts computed by a sealed rule.
+
+## Lifecycle
 
 ```
-        Research question
-                |
-          Preregistration          question, metric, scale, threshold,
-                |                  decision rules, kill conditions -- fixed
-                |                  and sealed before any outcome exists
-               Seal
-                |
-            MAIN_AGENT             design, implementation, evidence
-                |
-         Mechanical checks         deterministic; run before review is
-                |                  dispatched, because a validator that can
-                |                  reject an artifact is cheaper than a reviewer
-                |
-       INDEPENDENT_REVIEWER        a party that did not produce the work,
-                |                  working from a separately constructed
-                |                  evidence surface, freezing its own result
-                |                  before it sees the producer's
-                |
-        PASS / PASS_WITH_BACKLOG / HOLD
-                |
-        +-------+--------+
-        |                |
-   bounded repair    OWNER gate    the reserved decisions: reveal, disposition,
-        |                |         real-data execution, methodology change,
-        +------> re-review         public release, destructive mutation
-                         |
-                 Research disposition
+S0 FRAME ──► S1 DESIGN+SEAL ──► S2 BUILD ──► S3 RUN ──► S4 VERDICT ──► STOP
+   │               │                │            │             │
+   │               │                │            │             └─ tooling applies the sealed verdict
+   │               │                │            │                rule; the Delegate reproduces and
+   │               │                │            │                decides; no departure after outcome
+   │               │                │            └─ mechanical gate; a one-shot grant is recorded as
+   │               │                │               consumed before outcomes are touched; fail closed
+   │               │                └─ implement · test · repair · replay; machine checks, not reviewers
+   │               └─ preregistration with a verdict rule, resolvability (MDE vs the smallest effect
+   │                  of interest), data rules enforced in code, validity checks; sealed by digest
+   └─ mechanism → family → candidate; anti-revival; point-in-time feasibility first
 ```
 
-Stages, roles and verdicts are defined normatively in [SPEC.md](SPEC.md). This
-diagram is a map, not the rules.
+At every research boundary the Builder writes a **checkpoint**:
+
+1. rewrite the one-screen current state;
+2. regenerate derived facts, or point to their source;
+3. run the reproduce command and a link check;
+4. commit;
+5. notify the Delegate with the revision.
+
+The Delegate reproduces from the repository at that revision. Every statement is
+labelled `REPRODUCED`, `REASONED` or `SELF-REPORTED`, and a PASS lists what it
+reproduced.
+
+Review is bounded:
+
+- a PASS means move on;
+- a HOLD needs a named threat and failure path, and buys one repair;
+- there are at most two rounds per gate per lineage.
 
 ## What QROS separates
 
 | Separation | Why it matters |
 |---|---|
-| Producing work / certifying it | The producer of a consequential artifact is never its sole certifier. A spawned agent is not independent of the agent that spawned it. |
-| Builder claim / mechanical evidence / independent verification | Three different kinds of support for a claim. None substitutes for another. |
-| What a party knows / when it knows it | Outcome exposure is recorded per party and per target. A reviewer freezes its own result before receiving the producer's. |
-| Blocking / non-blocking | A concern is a blocker only if it names one threat class and a concrete failure path on the current or next stage. Everything else is backlog, and work proceeds. |
-| Transport failure / implementation failure | A broken delivery leaves a gate unsatisfied without establishing anything about the work under review. |
-| Current state / historical record | One page says where the work stands and is rewritten. One log says what was decided and is append-only. |
-| Agent authority / Owner authority | A closed list of consequential actions no agent may self-authorize. |
+| Producing work / certifying it | No party certifies its own material contribution. A spawned agent is not independent of its spawner. |
+| Builder claim / mechanical evidence / independent verification | Three kinds of support. None substitutes for another. |
+| Numbers that reproduce / measurements that are valid | Reproduction shows a number follows from the bytes, not that the instrument measures what it claims. Validity checks are sealed and run first. |
+| Seal / authorization | A seal fixes the design; it does not permit a run. |
+| What a party knows / when it knows it | Exposure is recorded per party and object, and never regresses. A missing record is `UNKNOWN`, not `NONE`. |
+| Current state / history | One page, rewritten, says where the work stands. One append-only log says what was decided, by whom, and on what evidence. |
+| Retained / delegated authority | Irreversible, external and financial actions stay with the human Owner. |
 
-## The worked example
+## The worked example (v1-era)
 
-[`examples/synthetic-study/`](examples/synthetic-study/STUDY.md) runs the whole
-lifecycle on **entirely fabricated, deterministically generated data**. It is
-the shortest honest way to see what the rules do.
-
-A signal was tested against the next period's synthetic return:
+[`examples/synthetic-study/`](examples/synthetic-study/STUDY.md) runs a whole study on
+**entirely fabricated, deterministically generated data**. It was produced under
+QROS 1.0, so its dispatch, brief and attestation files show retired machinery (see
+[V1_ERA.md](examples/synthetic-study/V1_ERA.md)). Its lesson holds unchanged in v2.
 
 | | |
 |---|---|
@@ -92,49 +118,39 @@ A signal was tested against the next period's synthetic return:
 | Preregistered threshold | **0.15** |
 | Final disposition | **`not_promoted`** |
 
-The builder's implementation contained a one-line look-ahead defect: the signal
-window was shifted forward by a period, so the signal dated at *t* contained the
-return of *t+1* — the very quantity it was asked to predict. Four deterministic
-checks passed on it, because all four were shape checks and a leaked signal has
-the same shape as a correct one.
+The builder's code had a one-line look-ahead defect: the signal dated *t* contained the
+return of *t+1*. Four shape checks passed on it. A recomputation from the sealed
+definition, without the builder's code or number, got a different answer; that
+discrepancy was the finding. The repaired result fell below the preregistered threshold.
+The threshold never moved.
 
-An independent reviewer, working from an evidence surface that did not contain
-the builder's code or the builder's number, recomputed the statistic from the
-sealed definition and got a different answer. That discrepancy was the finding.
+In v2 terms:
 
-The repair changed one expression and added the regression test the reviewer had
-specified. The corrected result — independently recomputed again by a second
-reviewer — fell below the preregistered threshold, and the candidate was **not
-promoted**. The threshold never moved; the reserved sample was never opened.
+- the recomputation is the Delegate's `QROS-ACCEPT-REPRODUCTION-FIRST`;
+- the leak check that the shape checks lacked is a sealed validity check
+  (`QROS-PREREG-VALIDITY-CHECKS`, `QROS-CHECK-NON-VACUOUS`).
 
-**Nothing here is alpha.** The first number was an artefact of the defect, and
-the second describes a synthetic process that was designed in advance to sit
-below the threshold. It says nothing about any market. The point is that the
-workflow prevented a false-looking result from being promoted, and produced a
-recorded negative instead — which is a completed research result, not a failure.
+**Nothing here is alpha.** The first number was an artefact of the defect, and the
+second describes a synthetic process designed to sit below the threshold.
 
 ## Repository structure
 
 ```
 SPEC.md                     the single normative source; every rule, stated once
-templates/                  the artifact set: preregistration, research state,
-                            backlog, decision log, dispatch, review brief,
-                            attestation, sample-reuse declaration
-schemas/                    JSON Schema (2020-12) enforcing the templates and
-                            the closed vocabularies
-examples/synthetic-study/   one worked study, end to end, fully synthetic
-docs/                       why the rules exist, what they defend against,
-                            and how to adopt them
+templates/                  preregistration, research state, decision log, backlog,
+                            sample-reuse declaration
+schemas/                    JSON Schema (2020-12) enforcing the templates and the
+                            closed vocabularies
+examples/synthetic-study/   one worked study, end to end, fully synthetic (v1-era)
+docs/                       rationale, threat model, adoption guide
+retired/v1/                 v1 review dispatch, brief and attestation artifacts;
+                            never used for new work
 ```
 
 ## Quick start
 
-Read [`examples/synthetic-study/STUDY.md`](examples/synthetic-study/STUDY.md)
-first — it answers eleven questions about the study in order, and takes about
-five minutes.
-
-To reproduce the example (standard library only, no dependencies, no network,
-no committed data):
+To reproduce the example (standard library only; no dependencies, no network, no
+committed data):
 
 ```bash
 cd examples/synthetic-study
@@ -147,47 +163,45 @@ python analyze.py  --data data/sample_development.csv                 # 0.064635
 python checks.py   --data data/sample_development.csv                 # all checks pass
 ```
 
-Then read [SPEC.md](SPEC.md) for the rules themselves, and
-[docs/adoption.md](docs/adoption.md) to put them to work on a project of your
-own.
+Then read [SPEC.md](SPEC.md) for the rules and [docs/adoption.md](docs/adoption.md) to
+adopt them.
+
+**The minimal kit for a new project:**
+
+- this specification;
+- a one-screen current-state artifact;
+- an append-only decision log;
+- a reproduce command;
+- a preregistration from S1.
 
 ## Design principles
 
-- **Rigor that terminates.** Review rounds are budgeted; an exhausted budget
-  escalates to a human rather than opening another round. If the question can be
-  answered and nothing threatens the answer, the project proceeds with backlog
-  outstanding.
-- **Blindness is about reachability, not instruction.** Telling a reviewer not
-  to look at something it can reach does not make it blind. The evidence surface
-  is built so the material is absent.
-- **Machine checks before model checks.** If a deterministic check can reject an
-  artifact, run it first.
-- **A check that cannot fail is not protection.** Every governance check must be
-  demonstrably capable of failing.
-- **Negative results are results.** A preregistered question answered in the
-  negative is complete work. A process that only recognises favourable outcomes
-  will eventually manufacture one.
-- **Roles, not products.** `OWNER`, `MAIN_AGENT`, `INDEPENDENT_REVIEWER`,
-  `ARCHITECTURE_REVIEWER` are capabilities. Which model or person fills a role is
-  project configuration and forms no part of QROS semantics. The `OWNER` must be
-  human.
+- **Correct research first.** The priority order is correct research, then
+  reproducibility, then essential safety, then finishing, then framework perfection.
+  A control that costs more than the risk it removes is simplified or removed.
+- **Rigor that terminates.** Review is budgeted, negative results are complete work,
+  and `STOP` is terminal.
+- **Resolvability before spending a trial.** For a return-stream claim, precision is set
+  by calendar span. A design that can only return "unresolved" is redesigned or stopped
+  before it consumes a sample.
+- **Rules in code, not prose.** Data rules the runner can check are checked in the
+  runner.
+- **Machine checks before model checks.** A check that cannot fail is not protection.
+- **Roles, not products.** Which model or person fills a role is configuration. The
+  Owner is human.
 
 ## What QROS does not do
 
-- It does not find profitable strategies, and adopting it is not evidence that
-  any strategy is profitable.
-- It does not guarantee that a conforming project's conclusions are correct. It
-  raises the cost of an enumerated set of process failures and makes them
-  explicit when they occur.
-- It does not prevent overfitting. It makes specific overfitting-adjacent
-  behaviours — moving a threshold, reusing a burned sample, searching after the
-  question is answered — visible and recorded rather than silent.
-- It is not a backtesting engine, a signal library, a strategy collection, or a
-  data pipeline.
-- It makes no claim of suitability for any regulatory, fiduciary, or contractual
-  obligation.
-- It confers no certification. Conformance is self-declared, and a claim that
-  names its own gaps is more useful than one that does not.
+- It does not find profitable strategies, and adopting it is not evidence that any
+  strategy is profitable.
+- It does not guarantee correct conclusions. It raises the cost of named process
+  failures and makes them explicit when they occur.
+- It does not prevent overfitting. It makes threshold-moving, sample reuse and
+  post-answer searching visible and recorded.
+- It is not a backtesting engine, signal library, strategy collection or data
+  pipeline.
+- It makes no claim of fitness for any regulatory, fiduciary or contractual purpose,
+  and it confers no certification.
 
 ## License
 

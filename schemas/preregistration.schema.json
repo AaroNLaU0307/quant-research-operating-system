@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "preregistration.schema.json",
   "title": "QROS preregistration",
-  "description": "Validates templates/preregistration.yaml instances. Enforces QROS-PREREG-CONTENT, QROS-PREREG-SEAL-BEFORE-EXPOSURE, QROS-PREREG-KILL-REACHABILITY, QROS-PREREG-METRIC-SCALE-CONSISTENCY (presence, not scientific adequacy), QROS-PREREG-RULE-DOMAIN-ANALYSIS, QROS-PREREG-RECHECK-AFTER-AMENDMENT, QROS-PREREG-LINEAGE, QROS-PRESEAL-CONTRIBUTION-RECORDED, QROS-AXIS-LANE, QROS-AXIS-TRIAL-ACCOUNTING, QROS-AXIS-OUTCOME-EXPOSURE. Validates structure and declared invariants only; it does not and cannot judge whether a hypothesis is sensible, a threshold reasonable, or power adequate.",
+  "description": "Validates templates/preregistration.yaml instances (QROS 2.0.0). Enforces the presence of what QROS-PREREG-CONTENT requires, including QROS-PREREG-VERDICT-RULE, QROS-PREREG-RESOLVABILITY, QROS-PREREG-VALIDITY-CHECKS, QROS-PREREG-ENFORCED-DATA-RULES and QROS-PRESEAL-CONTRIBUTION-RECORDED; also QROS-PREREG-SEAL-BEFORE-EXPOSURE, QROS-PREREG-KILL-REACHABILITY, QROS-PREREG-METRIC-SCALE-CONSISTENCY (presence, not scientific adequacy), QROS-PREREG-RECHECK-AFTER-AMENDMENT, QROS-PREREG-LINEAGE, QROS-AXIS-LANE, QROS-AXIS-TRIAL-ACCOUNTING and QROS-AXIS-OUTCOME-EXPOSURE. Validates structure and declared invariants only; it does not and cannot judge whether a hypothesis is sensible, a threshold reasonable, or a resolvability calculation correct.",
 
   "type": "object",
   "additionalProperties": false,
@@ -12,13 +12,43 @@
     "sample", "outcome_exposure", "seal"
   ],
 
+  "$defs": {
+    "CountOrUnknown": {
+      "description": "QROS-AXIS-TRIAL-ACCOUNTING: a count that is unknown is recorded as UNKNOWN, never invented.",
+      "oneOf": [
+        { "type": "integer", "minimum": 0 },
+        { "const": "UNKNOWN" }
+      ]
+    },
+    "VerdictRuleRow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["order", "condition", "research_status", "disposition"],
+      "properties": {
+        "order": { "type": "integer", "minimum": 1 },
+        "condition": {
+          "description": "A mechanically evaluable condition over the primary results, on the declared metric scale.",
+          "type": "string",
+          "minLength": 1
+        },
+        "research_status": { "$ref": "common.schema.json#/$defs/ResearchStatus" },
+        "disposition": {
+          "description": "A rule that reads primary results fires only after an outcome exists, so it cannot yield a pre-outcome disposition.",
+          "type": "string",
+          "enum": ["RUN_TO_VERDICT", "NOT_STANDALONE"]
+        },
+        "note": { "type": "string" }
+      }
+    }
+  },
+
   "properties": {
-    "schema_version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "schema_version": { "type": "string", "pattern": "^2\\.[0-9]+\\.[0-9]+$" },
     "prereg_id": { "$ref": "common.schema.json#/$defs/Identifier" },
     "prereg_version": { "type": "integer", "minimum": 1 },
     "project_id": { "$ref": "common.schema.json#/$defs/Identifier" },
     "work_item": { "$ref": "common.schema.json#/$defs/Identifier" },
-    "authored_by": { "$ref": "common.schema.json#/$defs/RoleBinding" },
+    "authored_by": { "$ref": "common.schema.json#/$defs/Party" },
     "authored_at": { "$ref": "common.schema.json#/$defs/Timestamp" },
 
     "lane": { "$ref": "common.schema.json#/$defs/Lane" },
@@ -26,19 +56,47 @@
     "research_question": { "type": "string", "minLength": 1 },
     "hypothesis": { "type": "string", "minLength": 1 },
     "mechanism": { "type": "string" },
+    "rival_explanations": { "type": "array", "items": { "type": "string", "minLength": 1 } },
 
     "metric": {
-      "description": "The quantity being computed. QROS-PREREG-CONTENT requires every preregistration to identify it sufficiently to establish quantity, units, scale and transformation. This is unconditional: it does not depend on whether a decision-relevant magnitude threshold exists. Only the threshold itself is conditional (see decision_threshold). `transformation` is required and may be the explicit value `none`; omitting it leaves the quantity underdetermined, whereas stating `none` is a positive claim that no transform is applied.",
+      "description": "The estimand and metric on one declared scale (QROS-PREREG-CONTENT, QROS-PREREG-METRIC-SCALE-CONSISTENCY). Unconditional. `transformation` is required and may be the explicit value `none`.",
       "type": "object",
       "additionalProperties": false,
       "required": ["name", "definition", "units", "scale", "transformation"],
       "properties": {
         "name": { "type": "string", "minLength": 1 },
+        "estimand": { "type": "string", "minLength": 1 },
         "definition": { "type": "string", "minLength": 1 },
         "units": { "type": "string", "minLength": 1 },
         "scale": { "type": "string", "minLength": 1 },
         "transformation": { "type": "string", "minLength": 1 },
         "horizon": { "type": "string" }
+      }
+    },
+
+    "primary": {
+      "description": "The primary definition (QROS-PREREG-CONTENT). The verdict rule reads the primary result only.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "metric_ref", "definition"],
+      "properties": {
+        "id": { "$ref": "common.schema.json#/$defs/Identifier" },
+        "metric_ref": { "type": "string", "minLength": 1 },
+        "definition": { "type": "string", "minLength": 1 }
+      }
+    },
+
+    "secondaries": {
+      "description": "Secondary results. They never enter the verdict rule.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "definition"],
+        "properties": {
+          "id": { "$ref": "common.schema.json#/$defs/Identifier" },
+          "definition": { "type": "string", "minLength": 1 }
+        }
       }
     },
 
@@ -85,6 +143,7 @@
         "inclusion_rules": { "type": "array", "items": { "type": "string" } },
         "exclusion_rules": { "type": "array", "items": { "type": "string" } },
         "reserved_portion": {
+          "description": "QROS-REUSE-LOCKBOX: a sealed holdout arm is built only when a planned test will consume it.",
           "type": "object",
           "additionalProperties": false,
           "required": ["exists"],
@@ -92,33 +151,96 @@
             "exists": { "type": "boolean" },
             "identity": { "$ref": "common.schema.json#/$defs/Identifier" },
             "definition": { "type": "string" },
-            "enforcement": { "type": "string", "minLength": 1 }
+            "enforcement": { "type": "string", "minLength": 1 },
+            "consuming_test": { "type": "string", "minLength": 1 }
           },
           "if": { "properties": { "exists": { "const": true } }, "required": ["exists"] },
-          "then": { "required": ["identity", "definition", "enforcement"] }
+          "then": { "required": ["identity", "definition", "enforcement", "consuming_test"] }
         }
       }
     },
 
-    "decision_rules": {
-      "description": "Evaluated in the stated order.",
+    "missing_data_policy": { "type": "string", "minLength": 1 },
+    "cost_model": { "type": "string", "minLength": 1 },
+
+    "enforced_data_rules": {
+      "description": "QROS-PREREG-ENFORCED-DATA-RULES. Every window, terminal-period, universe and missing-data rule the runner can check is checked in the runner's code; a rule stated only in prose does not control the run.",
       "type": "array",
-      "minItems": 1,
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["order", "condition", "outcome"],
+        "required": ["rule", "runner_checkable"],
         "properties": {
-          "order": { "type": "integer", "minimum": 1 },
-          "condition": { "type": "string", "minLength": 1 },
-          "outcome": { "type": "string", "minLength": 1 },
-          "note": { "type": "string" }
+          "rule": { "type": "string", "minLength": 1 },
+          "kind": { "type": "string", "enum": ["WINDOW", "TERMINAL_PERIOD", "UNIVERSE", "MISSING_DATA", "OTHER"] },
+          "runner_checkable": { "type": "boolean" },
+          "enforced_in_code_at": {
+            "description": "Where the runner checks the rule, e.g. a file and function.",
+            "type": "string",
+            "minLength": 1
+          },
+          "not_checkable_reason": { "type": "string", "minLength": 1 }
+        },
+        "allOf": [
+          {
+            "if": { "properties": { "runner_checkable": { "const": true } }, "required": ["runner_checkable"] },
+            "then": { "required": ["enforced_in_code_at"] }
+          },
+          {
+            "if": { "properties": { "runner_checkable": { "const": false } }, "required": ["runner_checkable"] },
+            "then": { "required": ["not_checkable_reason"] }
+          }
+        ]
+      }
+    },
+
+    "validity_checks": {
+      "description": "QROS-PREREG-VALIDITY-CHECKS. One check per measurement instrument; it runs, and must pass, before the primary result is read.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["instrument", "check", "must_pass_before_primary"],
+        "properties": {
+          "instrument": { "type": "string", "minLength": 1 },
+          "check": { "type": "string", "minLength": 1 },
+          "must_pass_before_primary": { "const": true },
+          "implemented_at": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+
+    "verdict_rule": {
+      "description": "QROS-PREREG-VERDICT-RULE. A mechanical map from primary results to a research status plus disposition (QROS-VERDICT-VOCABULARY), so that S4 computes rather than debates (QROS-VERDICT-RULE-COMPUTED). Rules are evaluated in order; the first that fires is the verdict. Where no rule can be applied, the verdict is unresolved and the reason is recorded (QROS-VERDICT-NO-DEPARTURE).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["primary_ref", "rules", "if_not_applicable"],
+      "properties": {
+        "primary_ref": { "type": "string", "minLength": 1 },
+        "rules": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/VerdictRuleRow" }
+        },
+        "if_not_applicable": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["research_status", "record_reason"],
+          "properties": {
+            "research_status": { "const": "unresolved" },
+            "record_reason": { "const": true }
+          }
+        },
+        "computed_by": {
+          "description": "The tooling that recomputes the primary results and applies this rule.",
+          "type": "string",
+          "minLength": 1
         }
       }
     },
 
     "kill_conditions": {
-      "description": "QROS-PREREG-KILL-REACHABILITY. Reachability must be demonstrated from inputs available in advance; the schema requires the demonstration to be recorded, not that it be correct.",
+      "description": "QROS-PREREG-KILL-REACHABILITY. Each kill criterion is reachable, on the declared scale, by a plausible outcome; the schema requires the demonstration to be recorded, not that it be correct.",
       "type": "array",
       "items": {
         "type": "object",
@@ -128,6 +250,7 @@
           "id": { "$ref": "common.schema.json#/$defs/Identifier" },
           "condition": { "type": "string", "minLength": 1 },
           "consequence": { "type": "string" },
+          "verdict_rule_order": { "type": "integer", "minimum": 1 },
           "reachability": {
             "type": "object",
             "additionalProperties": false,
@@ -137,7 +260,6 @@
               "method": { "type": "string", "minLength": 1 },
               "attainable_range": { "type": "string", "minLength": 1 },
               "evidence_ref": { "$ref": "common.schema.json#/$defs/Identifier" },
-              "bounded_region": { "type": "boolean" },
               "not_demonstrated_reason": { "type": "string", "minLength": 1 }
             },
             "allOf": [
@@ -155,38 +277,29 @@
       }
     },
 
-    "rule_domain_analysis": {
-      "description": "QROS-PREREG-RULE-DOMAIN-ANALYSIS.",
+    "resolvability": {
+      "description": "QROS-PREREG-RESOLVABILITY. Before a one-shot trial is spent: the admissible sample size and the minimum detectable effect, set against the smallest effect of interest, on the metric's declared scale. For a return-stream claim precision is governed by calendar span: t = annualized Sharpe x sqrt(span in years); higher-frequency sampling or pooling across instruments does not change that relation. A design that can only return unresolved is redesigned or stopped, not run.",
       "type": "object",
       "additionalProperties": false,
-      "required": ["performed"],
+      "required": ["admissible_n", "mde", "smallest_effect_of_interest", "scale_ref", "return_stream_claim", "resolvable", "method"],
       "properties": {
-        "performed": { "type": "boolean" },
-        "performed_at": { "$ref": "common.schema.json#/$defs/Timestamp" },
-        "evidence_ref": { "$ref": "common.schema.json#/$defs/Identifier" },
-        "rules_examined": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "additionalProperties": false,
-            "required": ["rule_ref", "at_minimum", "at_maximum"],
-            "properties": {
-              "rule_ref": { "type": ["string", "integer"] },
-              "at_minimum": { "type": "string", "minLength": 1 },
-              "at_maximum": { "type": "string", "minLength": 1 },
-              "degenerate": { "type": "boolean" }
-            }
-          }
-        },
-        "contradictions_found": { "type": "array", "items": { "type": "string" } },
-        "jointly_unsatisfiable": { "type": "array", "items": { "type": "string" } }
+        "admissible_n": { "type": "integer", "minimum": 1 },
+        "mde": { "type": "number" },
+        "smallest_effect_of_interest": { "type": "number" },
+        "scale_ref": { "type": "string", "minLength": 1 },
+        "return_stream_claim": { "type": "boolean" },
+        "span_years": { "type": "number", "exclusiveMinimum": 0 },
+        "span_note": { "type": "string", "minLength": 1 },
+        "method": { "type": "string", "minLength": 1 },
+        "resolvable": { "type": "boolean" },
+        "evidence_ref": { "$ref": "common.schema.json#/$defs/Identifier" }
       },
-      "if": { "properties": { "performed": { "const": true } }, "required": ["performed"] },
-      "then": { "required": ["rules_examined"] }
+      "if": { "properties": { "return_stream_claim": { "const": true } }, "required": ["return_stream_claim"] },
+      "then": { "required": ["span_years", "span_note"] }
     },
 
     "trial_accounting": {
-      "description": "QROS-AXIS-TRIAL-ACCOUNTING. QROS prescribes no counting formula; the project's declared method is recorded. adjustment_method is a free string precisely so no particular procedure becomes a QROS default.",
+      "description": "QROS-AXIS-TRIAL-ACCOUNTING. The project's declared counting scheme; the count lives in one declared place. QROS prescribes no counting formula. An unknown count is recorded as UNKNOWN and no adjusted statistic is computed against an invented count.",
       "type": "object",
       "additionalProperties": false,
       "required": ["planned_comparison_count", "family_definition", "adjustment_method"],
@@ -204,7 +317,7 @@
             "required": ["sample_ref"],
             "properties": {
               "sample_ref": { "$ref": "common.schema.json#/$defs/Identifier" },
-              "prior_effective_attempts": { "type": "integer", "minimum": 0 },
+              "prior_effective_attempts": { "$ref": "#/$defs/CountOrUnknown" },
               "this_study_adds": { "type": "integer", "minimum": 0 }
             }
           }
@@ -233,7 +346,7 @@
     },
 
     "lineage": {
-      "description": "QROS-PREREG-LINEAGE and QROS-PREREG-RECHECK-AFTER-AMENDMENT. Every amendment records that the three pre-seal checks were re-run.",
+      "description": "QROS-PREREG-LINEAGE and QROS-PREREG-RECHECK-AFTER-AMENDMENT. Every amendment records that the validators were rerun and resolvability rechecked.",
       "type": "object",
       "additionalProperties": false,
       "required": ["amendments"],
@@ -254,11 +367,12 @@
               "rechecks_after_amendment": {
                 "type": "object",
                 "additionalProperties": false,
-                "required": ["kill_reachability", "metric_scale_consistency", "rule_domain_analysis"],
+                "required": ["validators", "resolvability", "kill_reachability", "metric_scale_consistency"],
                 "properties": {
+                  "validators": { "const": "RE_RUN" },
+                  "resolvability": { "const": "RE_RUN" },
                   "kill_reachability": { "type": "string", "enum": ["RE_RUN", "NOT_APPLICABLE"] },
-                  "metric_scale_consistency": { "type": "string", "enum": ["RE_RUN", "NOT_APPLICABLE"] },
-                  "rule_domain_analysis": { "type": "string", "enum": ["RE_RUN", "NOT_APPLICABLE"] }
+                  "metric_scale_consistency": { "type": "string", "enum": ["RE_RUN", "NOT_APPLICABLE"] }
                 }
               }
             }
@@ -267,52 +381,87 @@
       }
     },
 
-    "reviewer_contributions": {
-      "description": "QROS-PRESEAL-CONTRIBUTION-RECORDED. An adopted contribution must state its consequence for later certification.",
+    "design_contributions": {
+      "description": "QROS-PRESEAL-CONTRIBUTION-RECORDED. Design contributions by any party, recorded before seal. Where a party supplied an adopted element, its later acceptance of that element is REASONED at most, never independent (QROS-ROLE-SELF-CERTIFICATION).",
       "type": "array",
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["review_ref", "contributor", "element_supplied", "adopted"],
+        "required": ["contributor", "element_supplied", "adopted"],
         "properties": {
-          "review_ref": { "$ref": "common.schema.json#/$defs/Identifier" },
-          "contributor": { "$ref": "common.schema.json#/$defs/RoleBinding" },
+          "contributor": { "$ref": "common.schema.json#/$defs/Party" },
           "element_supplied": { "type": "string", "minLength": 1 },
+          "source_ref": { "type": "string", "minLength": 1 },
           "adopted": { "type": "boolean" },
-          "consequence_for_certification": { "type": "string", "minLength": 1 }
+          "acceptance_consequence": { "type": "string", "minLength": 1 }
         },
         "if": { "properties": { "adopted": { "const": true } }, "required": ["adopted"] },
-        "then": { "required": ["consequence_for_certification"] }
+        "then": { "required": ["acceptance_consequence"] }
       }
     },
 
     "seal": {
-      "description": "QROS-PREREG-SEAL-BEFORE-EXPOSURE.",
+      "description": "QROS-PREREG-SEAL-BEFORE-EXPOSURE and QROS-PREREG-LINEAGE. The seal is a digest manifest over the preregistration and the code and data identities that define the object under test; it precedes any exposure of the outcome it governs. Sealing is a delegated decision (QROS-GATE-DELEGATED), so the sealer is never the BUILDER. A seal is not authorization to run (QROS-RUN-SEAL-NOT-AUTHORIZATION).",
       "type": "object",
       "additionalProperties": false,
       "required": ["state"],
       "properties": {
         "state": { "type": "string", "enum": ["DRAFT", "SEALED"] },
         "sealed_at": { "$ref": "common.schema.json#/$defs/Timestamp" },
-        "content_digest": { "$ref": "common.schema.json#/$defs/Digest" },
-        "sealed_by": { "$ref": "common.schema.json#/$defs/RoleBinding" }
+        "manifest_ref": { "type": "string", "minLength": 1 },
+        "manifest_digest": { "$ref": "common.schema.json#/$defs/Digest" },
+        "covers": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["preregistration", "code", "data"],
+          "properties": {
+            "preregistration": { "type": "string", "minLength": 1 },
+            "code": { "type": "string", "minLength": 1 },
+            "data": { "type": "string", "minLength": 1 },
+            "environment": { "type": "string", "minLength": 1 }
+          }
+        },
+        "parent_seal": {
+          "description": "The parent seal, or NONE. Superseded seals are kept and never erased.",
+          "type": "string",
+          "minLength": 1
+        },
+        "decided_by": {
+          "allOf": [
+            { "$ref": "common.schema.json#/$defs/Party" },
+            { "properties": { "role": { "enum": ["OWNER", "DELEGATE"] } } }
+          ]
+        },
+        "decision_entry": { "$ref": "common.schema.json#/$defs/Identifier" }
       },
       "if": { "properties": { "state": { "const": "SEALED" } }, "required": ["state"] },
-      "then": { "required": ["sealed_at", "content_digest", "sealed_by"] }
+      "then": { "required": ["sealed_at", "manifest_ref", "manifest_digest", "covers", "parent_seal", "decided_by", "decision_entry"] }
     }
   },
 
   "allOf": [
     {
-      "$comment": "QROS-AXIS-LANE: a FULL-lane preregistration is a confirmatory contract and must carry the fields that make it one. EXPLORATORY and MEASUREMENT work is not required to carry them (QROS-LIFECYCLE-PROPORTIONALITY).",
+      "$comment": "QROS-LIFECYCLE-PROPORTIONALITY: the full lifecycle applies to preregistered FULL work, so a FULL-lane preregistration carries every element of QROS-PREREG-CONTENT. EXPLORATORY and MEASUREMENT work is not required to carry them.",
       "if": { "properties": { "lane": { "const": "FULL" } }, "required": ["lane"] },
       "then": {
-        "required": ["decision_rules", "kill_conditions", "rule_domain_analysis", "trial_accounting", "lineage"],
+        "required": [
+          "primary", "missing_data_policy", "cost_model", "enforced_data_rules",
+          "validity_checks", "verdict_rule", "kill_conditions", "resolvability",
+          "trial_accounting", "prior_reuse_declarations", "lineage", "design_contributions"
+        ],
         "properties": {
-          "kill_conditions": { "minItems": 1 },
-          "rule_domain_analysis": { "properties": { "performed": { "const": true } } }
+          "validity_checks": { "minItems": 1 },
+          "kill_conditions": { "minItems": 1 }
         }
       }
+    },
+    {
+      "$comment": "QROS-PREREG-RESOLVABILITY: a design that can only return unresolved is redesigned or stopped, never sealed for a run.",
+      "if": {
+        "properties": { "seal": { "properties": { "state": { "const": "SEALED" } }, "required": ["state"] } },
+        "required": ["seal", "resolvability"]
+      },
+      "then": { "properties": { "resolvability": { "properties": { "resolvable": { "const": true } } } } }
     }
   ]
 }

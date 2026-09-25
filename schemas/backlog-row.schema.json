@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "backlog-row.schema.json",
   "title": "QROS blocker / backlog row",
-  "description": "Validates a single row of templates/backlog.md. Enforces QROS-BLOCKER-CLASSES and QROS-BLOCKER-ADMISSION. Three genuinely different row shapes are discriminated on `class` rather than merged, so that a non-blocking backlog row is never required to carry a fabricated threat class or failure path, and a transport failure is never recorded as a finding against the work.",
+  "description": "Validates a single row of templates/backlog.md (QROS 2.0.0). Enforces QROS-BLOCKER-CLASSES, QROS-BLOCKER-ADMISSION, QROS-REVIEW-SELF-REPORTED-NOT-BLOCKING and QROS-BLOCKER-CLOSED-STAYS-CLOSED. Three genuinely different row shapes are discriminated on `class` rather than merged, so that a non-blocking backlog row is never required to carry a fabricated threat class or failure path, and a transport failure is never recorded as a finding against the work.",
 
   "type": "object",
   "required": ["id", "class", "status"],
@@ -16,26 +16,26 @@
   "oneOf": [
     {
       "title": "Blocking row",
-      "$comment": "QROS-BLOCKER-ADMISSION: admitted only with exactly one threat class AND a concrete failure path on the current or next stage. `evidence_to_clear` is required so every row has a defined exit; a row that cannot be closed is not admissible.",
+      "$comment": "QROS-BLOCKER-ADMISSION: admitted only with a named threat AND a concrete failure path on the current or next stage. `threat_class` optionally tags the threat with the closed QROS-THREAT-VOCABULARY. A SELF-REPORTED statement never blocks on its own, so the row's evidence is REPRODUCED or REASONED. `evidence_to_clear` is required so every row has a defined exit; a row that cannot be closed is not admissible.",
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "id", "class", "threat_class", "failure_path", "stage_affected",
+        "id", "class", "threat", "failure_path", "stage_affected",
         "evidence_for_row", "evidence_to_clear", "opened_by", "opened_at", "status"
       ],
       "properties": {
         "id": { "$ref": "common.schema.json#/$defs/Identifier" },
         "class": { "type": "string", "enum": ["CURRENT_PATH_BLOCKER", "ARCHITECTURE_LEVEL_BLOCKER"] },
+        "threat": { "type": "string", "minLength": 1 },
         "threat_class": { "$ref": "common.schema.json#/$defs/ThreatClass" },
         "failure_path": { "type": "string", "minLength": 1 },
         "stage_affected": { "type": "string", "enum": ["CURRENT", "NEXT"] },
-        "evidence_for_row": { "$ref": "common.schema.json#/$defs/EvidenceClass" },
+        "evidence_for_row": { "type": "string", "enum": ["REPRODUCED", "REASONED"] },
         "evidence_reference": { "type": "string" },
         "evidence_to_clear": { "type": "string", "minLength": 1 },
         "opened_by": { "$ref": "common.schema.json#/$defs/RoleBinding" },
         "opened_by_role": { "$ref": "common.schema.json#/$defs/Role" },
         "opened_at": { "$ref": "common.schema.json#/$defs/Timestamp" },
-        "expires": { "type": ["string", "null"] },
         "status": { "type": "string", "enum": ["OPEN", "CLOSED"] },
         "closed_at": { "type": "string" },
         "closing_evidence": { "type": "string" }
@@ -51,7 +51,7 @@
 
     {
       "title": "Non-blocking backlog row",
-      "$comment": "A different shape by design. `threat_class` and `failure_path` are PROHIBITED here, not merely optional, so the blocker/backlog distinction cannot be eroded by filling a blocker shape with invented values.",
+      "$comment": "A different shape by design. `threat`, `threat_class` and `failure_path` are PROHIBITED here, not merely optional, so the blocker/backlog distinction cannot be eroded by filling a blocker shape with invented values.",
       "type": "object",
       "additionalProperties": false,
       "required": ["id", "class", "item", "kind", "source", "disposition", "status"],
@@ -75,7 +75,7 @@
 
     {
       "title": "Unsatisfied-gate row",
-      "$comment": "QROS-BLOCKER-TRANSPORT-NOT-IMPLEMENTATION: a transport or seating failure leaves a gate unsatisfied, establishes nothing about the work, and consumes no round. It carries no threat class and no failure path, because none was demonstrated.",
+      "$comment": "QROS-BLOCKER-TRANSPORT-NOT-IMPLEMENTATION: a transport, tool, packaging, review-seat or procedural failure leaves a gate unsatisfied, is not evidence of an implementation defect, and consumes no review round. It carries no threat and no failure path, because none was demonstrated.",
       "type": "object",
       "additionalProperties": false,
       "required": ["id", "class", "gate_unsatisfied", "what_failed", "round_consumed", "remedy", "status"],
@@ -83,7 +83,7 @@
         "id": { "$ref": "common.schema.json#/$defs/Identifier" },
         "class": {
           "type": "string",
-          "enum": ["TRANSPORT_OR_PACKAGING_FAILURE", "REVIEWER_ELIGIBILITY_OR_PROCEDURAL_FAILURE"]
+          "enum": ["TRANSPORT_OR_PACKAGING_ISSUE", "REVIEW_SEAT_OR_PROCEDURAL_FAILURE"]
         },
         "gate_unsatisfied": { "type": "string", "minLength": 1 },
         "what_failed": { "type": "string", "minLength": 1 },
